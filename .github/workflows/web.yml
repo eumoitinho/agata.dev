@@ -1,0 +1,230 @@
+name: 'Libra Web Core Deploy'
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'apps/web/**'
+      - 'packages/api/**'
+      - 'packages/auth/**'
+      - 'packages/better-auth-cloudflare/**'
+      - 'packages/better-auth-stripe/**'
+      - 'packages/common/**'
+      - 'packages/db/**'
+      - 'packages/email/**'
+      - 'packages/templates/**'
+      - 'packages/ui/**'
+      - 'packages/shikicode/**'
+      - 'packages/sandbox/**'
+      - 'tooling/**'
+      - 'package.json'
+      - 'turbo.json'
+      - '.github/workflows/web.yml'
+      - 'bun.lock'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'apps/web/**'
+      - 'packages/api/**'
+      - 'packages/auth/**'
+      - 'packages/better-auth-cloudflare/**'
+      - 'packages/better-auth-stripe/**'
+      - 'packages/common/**'
+      - 'packages/db/**'
+      - 'packages/email/**'
+      - 'packages/templates/**'
+      - 'packages/ui/**'
+      - 'packages/shikicode/**'
+      - 'packages/sandbox/**'
+      - 'tooling/**'
+      - 'package.json'
+      - 'turbo.json'
+      - '.github/workflows/web.yml'
+      - 'bun.lock'
+
+# Limit concurrent workflow runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Publish to Cloudflare Workers
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: 'Bun setup'
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.19
+
+
+      - name: Cache dependencies
+        uses: useblacksmith/cache@v5
+        id: bun-cache
+        with:
+          path: |
+            **/node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Cache Next.js Build
+        uses: useblacksmith/cache@v5
+        with:
+          path: |
+            ${{ github.workspace }}/apps/web/.next/cache
+            ${{ github.workspace }}/apps/web/.open-next
+            ${{ github.workspace }}/apps/web/paraglide
+          # Generate a new cache whenever packages or source files change
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          # If source files changed but packages didn't, rebuild from a prior cache
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-
+
+      - name: Install Deps
+        if: steps.bun-cache.outputs.cache-hit != 'true'
+        run: bun install
+
+      - name: Set version
+        id: version
+        run: echo "version=$(date +'%Y%m%d%H%M%S')-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Compile Paraglide
+        run: |
+          cd apps/web
+          bun run prebuild
+        continue-on-error: false
+
+      - name: Build and Deploy/Upload
+        id: deploy
+        run: |
+          # Set environment variables securely (hidden from logs)
+          echo "Setting up environment variables..."
+
+          # Suppress Wrangler verbose logging to prevent secret exposure
+          export WRANGLER_LOG=error
+
+          # Public URLs (safe to show)
+          export NEXT_PUBLIC_APP_URL="${{ secrets.NEXT_PUBLIC_APP_URL }}"
+          export NEXT_PUBLIC_CDN_URL="${{ secrets.NEXT_PUBLIC_CDN_URL }}"
+          export NEXT_PUBLIC_DEPLOY_URL="${{ secrets.NEXT_PUBLIC_DEPLOY_URL }}"
+          export NEXT_PUBLIC_DISPATCHER_URL="${{ secrets.NEXT_PUBLIC_DISPATCHER_URL }}"
+          export NEXT_PUBLIC_DOCS_URL="${{ secrets.NEXT_PUBLIC_DOCS_URL }}"
+          export NEXT_PUBLIC_SCREENSHOT_URL="${{ secrets.NEXT_PUBLIC_SCREENSHOT_URL }}"
+          export NEXT_PUBLIC_SCAN="${{ secrets.NEXT_PUBLIC_SCAN }}"
+          export NEXT_PUBLIC_TURNSTILE_SITE_KEY="${{ secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}"
+          export NEXT_PUBLIC_SANDBOX_DEFAULT_PROVIDER="${{ secrets.NEXT_PUBLIC_SANDBOX_DEFAULT_PROVIDER }}"
+          export NEXT_PUBLIC_SANDBOX_BUILDER_DEFAULT_PROVIDER="${{ secrets.NEXT_PUBLIC_SANDBOX_BUILDER_DEFAULT_PROVIDER }}"
+          export NEXT_PUBLIC_POSTHOG_KEY="${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}"
+          export NEXT_PUBLIC_POSTHOG_HOST="${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}"
+          export NEXT_PUBLIC_GITHUB_APP_URL="${{ secrets.NEXT_PUBLIC_GITHUB_APP_URL }}"
+          export NEXT_PUBLIC_CLOUDFLARE_DCV_VERIFICATION_ID="${{ secrets.NEXT_PUBLIC_CLOUDFLARE_DCV_VERIFICATION_ID }}"
+          export NEXT_PUBLIC_CUSTOMERS_IP_ADDRESS="${{ secrets.NEXT_PUBLIC_CUSTOMERS_IP_ADDRESS }}"
+
+          # Authentication secrets
+          export BETTER_AUTH_SECRET="${{ secrets.BETTER_AUTH_SECRET }}"
+          export BETTER_GITHUB_CLIENT_ID="${{ secrets.BETTER_GITHUB_CLIENT_ID }}"
+          export BETTER_GITHUB_CLIENT_SECRET="${{ secrets.BETTER_GITHUB_CLIENT_SECRET }}"
+
+          # Security secrets
+          export TURNSTILE_SECRET_KEY="${{ secrets.TURNSTILE_SECRET_KEY }}"
+
+          # Database secrets
+          export POSTGRES_URL="${{ secrets.POSTGRES_URL }}"
+          export DATABASE_ID="${{ secrets.DATABASE_ID }}"
+
+          # Azure AI secrets
+          export AZURE_DEPLOYMENT_NAME="${{ secrets.AZURE_DEPLOYMENT_NAME }}"
+          export AZURE_RESOURCE_NAME="${{ secrets.AZURE_RESOURCE_NAME }}"
+          export AZURE_API_KEY="${{ secrets.AZURE_API_KEY }}"
+          export AZURE_BASE_URL="${{ secrets.AZURE_BASE_URL }}"
+
+          # API Keys
+          export OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}"
+          export RESEND_API_KEY="${{ secrets.RESEND_API_KEY }}"
+          export RESEND_FROM="${{ secrets.RESEND_FROM }}"
+          export E2B_API_KEY="${{ secrets.E2B_API_KEY }}"
+          export DAYTONA_API_KEY="${{ secrets.DAYTONA_API_KEY }}"
+
+          # Payment secrets
+          export STRIPE_WEBHOOK_SECRET="${{ secrets.STRIPE_WEBHOOK_SECRET }}"
+          export STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}"
+
+          # Cloudflare secrets
+          export CLOUDFLARE_ACCOUNT_ID="${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+          export CLOUDFLARE_API_TOKEN="${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          export CLOUDFLARE_AIGATEWAY_NAME="${{ secrets.CLOUDFLARE_AIGATEWAY_NAME }}"
+          export CLOUDFLARE_ZONE_ID="${{ secrets.CLOUDFLARE_ZONE_ID }}"
+          export CLOUDFLARE_SAAS_ZONE_ID="${{ secrets.CLOUDFLARE_SAAS_ZONE_ID }}"
+          export HYPERDRIVE_ID="${{ secrets.HYPERDRIVE_ID }}"
+          export KV_NAMESPACE_ID="${{ secrets.KV_NAMESPACE_ID }}"
+
+          # GitHub secrets
+          export LIBRA_GITHUB_TOKEN="${{ secrets.LIBRA_GITHUB_TOKEN }}"
+          export LIBRA_GITHUB_OWNER="${{ secrets.LIBRA_GITHUB_OWNER }}"
+          export LIBRA_GITHUB_REPO="${{ secrets.LIBRA_GITHUB_REPO }}"
+          export GITHUB_APP_SLUG="${{ secrets.GITHUB_APP_SLUG }}"
+          export GITHUB_APP_ID="${{ secrets.GITHUB_APP_ID }}"
+          export GITHUB_APP_PRIVATE_KEY="${{ secrets.GITHUB_APP_PRIVATE_KEY }}"
+          export GITHUB_APP_CLIENT_ID="${{ secrets.GITHUB_APP_CLIENT_ID }}"
+          export GITHUB_APP_CLIENT_SECRET="${{ secrets.GITHUB_APP_CLIENT_SECRET }}"
+          export GITHUB_WEBHOOK_SECRET="${{ secrets.GITHUB_WEBHOOK_SECRET }}"
+
+          # Feature flags
+          export ENHANCED_PROMPT="${{ secrets.ENHANCED_PROMPT }}"
+          export REASONING_ENABLED="${{ secrets.REASONING_ENABLED }}"
+
+          # Build configuration
+          export DEPLOY_VERSION="${{ steps.version.outputs.version }}"
+          export NEXT_TELEMETRY_DISABLED=1
+          export NODE_OPTIONS="--max_old_space_size=16384"
+
+          echo "Environment variables configured successfully"
+
+          # Build and deploy/upload using opennextjs-cloudflare
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "PR detected: using upload command"
+            bun run upload
+          else
+            echo "Push detected: using deploy command"
+            bun run deploy
+          fi
+        continue-on-error: false
+
+      - name: Create deployment
+        uses: chrnorm/deployment-action@v2
+        if: success() && github.event_name != 'pull_request'
+        with:
+          token: ${{ secrets.LIBRA_GITHUB_TOKEN }}
+          environment: production
+          environment-url: https://libra.dev
+          description: 'Deployed version ${{ steps.version.outputs.version }}'
+          ref: ${{ github.sha }}
+
+      - name: Purge Cloudflare CDN cache
+        # Set secrets to environment variables first, then reference env in if condition
+        env:
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        if: ${{ success() && env.CLOUDFLARE_ZONE_ID != '' }}
+        uses: nathanvaughn/actions-cloudflare-purge@master
+        with:
+          cf_zone: ${{ env.CLOUDFLARE_ZONE_ID }}
+          cf_auth: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+

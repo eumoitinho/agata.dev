@@ -1,0 +1,350 @@
+name: 'Libra Deploy Service Deploy'
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+      force_deploy:
+        description: 'Force deployment even if no changes detected'
+        required: false
+        default: false
+        type: boolean
+  push:
+    branches: [ main ]
+    tags:
+      - 'deploy-v*'
+    paths:
+      - 'apps/deploy/**'
+      - 'packages/auth/**'
+      - 'packages/db/**'
+      - 'packages/common/**'
+      - 'packages/middleware/**'
+      - 'packages/sandbox/**'
+      - 'packages/templates/**'
+      - 'packages/better-auth-cloudflare/**'
+      - 'packages/better-auth-stripe/**'
+      - 'packages/email/**'
+      - 'tooling/**'
+      - 'package.json'
+      - 'turbo.json'
+      - 'bun.lock'
+      - '.github/workflows/deploy.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'apps/deploy/**'
+      - 'packages/auth/**'
+      - 'packages/db/**'
+      - 'packages/common/**'
+      - 'packages/middleware/**'
+      - 'packages/sandbox/**'
+      - 'packages/templates/**'
+      - 'packages/better-auth-cloudflare/**'
+      - 'packages/better-auth-stripe/**'
+      - 'packages/email/**'
+      - 'tooling/**'
+      - 'package.json'
+      - 'turbo.json'
+      - 'bun.lock'
+      - '.github/workflows/deploy.yml'
+
+# Limit concurrent workflow runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Code quality and validation job
+  validate:
+    name: Code Quality & Validation
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.19
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        id: bun-cache
+        with:
+          path: |
+            **/node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        if: steps.bun-cache.outputs.cache-hit != 'true'
+        run: bun install --frozen-lockfile
+
+      - name: TypeScript type checking
+        run: |
+          cd apps/deploy
+          # Generate wrangler.jsonc using simple config processor (no sed/perl needed)
+          bun ../../scripts/config-processor.ts wrangler.jsonc.example wrangler.jsonc
+          bun run cf-typegen
+          cd ../..
+          bun turbo typecheck --filter=@libra/deploy
+
+      - name: Code formatting and linting
+        run: |
+          bun turbo format --filter=@libra/deploy
+          bun turbo lint --filter=@libra/deploy
+
+      - name: Security audit
+        run: bun audit
+        continue-on-error: true
+
+  # Build and deploy job
+  deploy:
+    name: Build & Deploy to Cloudflare Workers
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    timeout-minutes: 20
+    needs: validate
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
+
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+      url: ${{ steps.deploy.outputs.deployment-url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.19
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        id: bun-cache
+        with:
+          path: |
+            **/node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Cache Turbo build
+        uses: actions/cache@v4
+        with:
+          path: |
+            .turbo
+            apps/deploy/.turbo
+            apps/deploy/dist
+          key: ${{ runner.os }}-turbo-deploy-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('apps/deploy/**/*.ts', 'apps/deploy/**/*.js', 'apps/deploy/**/*.json') }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-deploy-${{ hashFiles('**/bun.lock') }}-
+            ${{ runner.os }}-turbo-deploy-
+
+      - name: Install dependencies
+        if: steps.bun-cache.outputs.cache-hit != 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Generate version
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${{ github.ref_name }}"
+          else
+            VERSION="$(date +'%Y%m%d%H%M%S')-${GITHUB_SHA::7}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate Cloudflare Workers types
+        env:
+
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_CDN_URL: ${{ secrets.NEXT_PUBLIC_CDN_URL }}
+          NEXT_PUBLIC_DEPLOY_URL: ${{ secrets.NEXT_PUBLIC_DEPLOY_URL }}
+          NEXT_PUBLIC_DISPATCHER_URL: ${{ secrets.NEXT_PUBLIC_DISPATCHER_URL }}
+          NEXT_PUBLIC_DOCS_URL: ${{ secrets.NEXT_PUBLIC_DOCS_URL }}
+          NEXT_PUBLIC_SCAN: ${{ secrets.NEXT_PUBLIC_SCAN }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_GITHUB_CLIENT_ID: ${{ secrets.BETTER_GITHUB_CLIENT_ID }}
+          BETTER_GITHUB_CLIENT_SECRET: ${{ secrets.BETTER_GITHUB_CLIENT_SECRET }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          DATABASE_ID: ${{ secrets.DATABASE_ID }}
+          AZURE_DEPLOYMENT_NAME: ${{ secrets.AZURE_DEPLOYMENT_NAME }}
+          AZURE_RESOURCE_NAME: ${{ secrets.AZURE_RESOURCE_NAME }}
+          AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
+          AZURE_BASE_URL: ${{ secrets.AZURE_BASE_URL }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM: ${{ secrets.RESEND_FROM }}
+          E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
+          DAYTONA_API_KEY: ${{ secrets.DAYTONA_API_KEY }}
+          SANDBOX_DEFAULT_PROVIDER: ${{ secrets.SANDBOX_DEFAULT_PROVIDER }}
+          SANDBOX_BUILDER_DEFAULT_PROVIDER: ${{ secrets.SANDBOX_BUILDER_DEFAULT_PROVIDER }}
+          NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
+          NEXT_PUBLIC_POSTHOG_HOST: ${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_AIGATEWAY_NAME: ${{ secrets.CLOUDFLARE_AIGATEWAY_NAME }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          LIBRA_GITHUB_TOKEN: ${{ secrets.LIBRA_GITHUB_TOKEN }}
+          LIBRA_GITHUB_OWNER: ${{ secrets.LIBRA_GITHUB_OWNER }}
+          LIBRA_GITHUB_REPO: ${{ secrets.LIBRA_GITHUB_REPO }}
+          ENHANCED_PROMPT: ${{ secrets.ENHANCED_PROMPT }}
+          REASONING_ENABLED: ${{ secrets.REASONING_ENABLED }}
+          GITHUB_APP_SLUG: ${{ secrets.GITHUB_APP_SLUG }}
+          GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
+          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          GITHUB_APP_CLIENT_ID: ${{ secrets.GITHUB_APP_CLIENT_ID }}
+          GITHUB_APP_CLIENT_SECRET: ${{ secrets.GITHUB_APP_CLIENT_SECRET }}
+          NEXT_PUBLIC_GITHUB_APP_URL: ${{ secrets.NEXT_PUBLIC_GITHUB_APP_URL }}
+          GITHUB_WEBHOOK_SECRET: ${{ secrets.GITHUB_WEBHOOK_SECRET }}
+          NEXT_PUBLIC_CLOUDFLARE_DCV_VERIFICATION_ID: ${{ secrets.NEXT_PUBLIC_CLOUDFLARE_DCV_VERIFICATION_ID }}
+          CLOUDFLARE_SAAS_ZONE_ID: ${{ secrets.CLOUDFLARE_SAAS_ZONE_ID }}
+          HYPERDRIVE_ID: ${{ secrets.HYPERDRIVE_ID }}
+          KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
+          NEXT_PUBLIC_CUSTOMERS_IP_ADDRESS: ${{ secrets.NEXT_PUBLIC_CUSTOMERS_IP_ADDRESS }}
+          NEXT_PUBLIC_SANDBOX_BUILDER_DEFAULT_PROVIDER: ${{ secrets.NEXT_PUBLIC_SANDBOX_BUILDER_DEFAULT_PROVIDER}}
+          DEPLOY_VERSION: ${{ steps.version.outputs.version }}
+
+        run: |
+          cd apps/deploy
+          # Generate wrangler.jsonc using simple config processor (no sed/perl needed)
+          bun ../../scripts/config-processor.ts wrangler.jsonc.example wrangler.jsonc
+          bun run cf-typegen
+
+      - name: Build project
+        run: |
+          bun turbo build --filter=@libra/deploy
+        env:
+          NODE_ENV: production
+
+      - name: Deploy to Cloudflare Workers
+        id: deploy
+        run: |
+          cd apps/deploy
+
+          # Set environment variables securely (hidden from logs)
+          echo "Setting up environment variables..."
+
+          # Suppress Wrangler verbose logging to prevent secret exposure
+          export WRANGLER_LOG=error
+
+          # Environment
+          export ENVIRONMENT="production"
+
+          # Cloudflare API credentials
+          export CLOUDFLARE_API_TOKEN="${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          export CLOUDFLARE_ACCOUNT_ID="${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+          export CLOUDFLARE_ZONE_ID="${{ secrets.CLOUDFLARE_ZONE_ID }}"
+          export CLOUDFLARE_AIGATEWAY_NAME="${{ secrets.CLOUDFLARE_AIGATEWAY_NAME || 'azure-ai' }}"
+
+          # Cloudflare resources
+          export DATABASE_ID="${{ secrets.DATABASE_ID }}"
+          export KV_NAMESPACE_ID="${{ secrets.KV_NAMESPACE_ID }}"
+          export HYPERDRIVE_ID="${{ secrets.HYPERDRIVE_ID }}"
+
+          # Application URLs
+          export NEXT_PUBLIC_APP_URL="${{ secrets.NEXT_PUBLIC_APP_URL || 'https://libra.dev' }}"
+          export NEXT_PUBLIC_CDN_URL="https://cdn.libra.dev"
+
+          # Database
+          export POSTGRES_URL="${{ secrets.POSTGRES_URL }}"
+          export DATABASE_URL="${{ secrets.POSTGRES_URL }}"
+
+          # Authentication
+          export BETTER_AUTH_SECRET="${{ secrets.BETTER_AUTH_SECRET }}"
+          export SESSION_SECRET="${{ secrets.BETTER_AUTH_SECRET }}"
+          export BETTER_GITHUB_CLIENT_ID="${{ secrets.BETTER_GITHUB_CLIENT_ID }}"
+          export BETTER_GITHUB_CLIENT_SECRET="${{ secrets.BETTER_GITHUB_CLIENT_SECRET }}"
+
+          # Security
+          export TURNSTILE_SECRET_KEY="${{ secrets.TURNSTILE_SECRET_KEY }}"
+
+          # Payment (optional)
+          export STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}"
+          export STRIPE_WEBHOOK_SECRET="${{ secrets.STRIPE_WEBHOOK_SECRET }}"
+
+          # Admin (optional)
+          export ADMIN_USER_IDS="${{ secrets.ADMIN_USER_IDS }}"
+
+          # API Keys
+          export RESEND_API_KEY="${{ secrets.RESEND_API_KEY }}"
+          export RESEND_FROM="${{ secrets.RESEND_FROM }}"
+
+          # Sandbox providers
+          export E2B_API_KEY="${{ secrets.E2B_API_KEY }}"
+          export DAYTONA_API_KEY="${{ secrets.DAYTONA_API_KEY }}"
+          export SANDBOX_DEFAULT_PROVIDER="${{ secrets.SANDBOX_DEFAULT_PROVIDER || 'e2b' }}"
+          export SANDBOX_BUILDER_DEFAULT_PROVIDER="${{ secrets.SANDBOX_BUILDER_DEFAULT_PROVIDER || 'e2b' }}"
+
+          # Logging and monitoring
+          export LOG_LEVEL="${{ secrets.LOG_LEVEL || 'info' }}"
+
+          # Version info
+          export DEPLOY_VERSION="${{ steps.version.outputs.version }}"
+
+          echo "Environment variables configured successfully"
+
+          # Generate final wrangler.jsonc with real environment variables for deployment
+          bun ../../scripts/config-processor.ts wrangler.jsonc.example wrangler.jsonc
+
+          # Deploy using Wrangler
+          bun run deploy
+
+          # Set deployment URL for GitHub deployment record
+          echo "deployment-url=https://deploy.libra.dev" >> $GITHUB_OUTPUT
+        continue-on-error: false
+
+      - name: Verify deployment
+        run: |
+          # Wait a moment for deployment to propagate
+          sleep 1
+          # Basic health check
+          HEALTH_URL="${{ steps.deploy.outputs.deployment-url }}/health"
+          curl -f -s "$HEALTH_URL" > /dev/null
+        continue-on-error: true
+
+      - name: Create deployment record
+        uses: chrnorm/deployment-action@v2
+        if: success() && github.event_name != 'pull_request'
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: ${{ github.event.inputs.environment || 'production' }}
+          environment-url: ${{ steps.deploy.outputs.deployment-url }}
+          description: 'Deploy service deployed - version ${{ steps.version.outputs.version }}'
+          ref: ${{ github.sha }}
