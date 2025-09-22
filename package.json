@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "turbo build --concurrency=100%",
+    "vercel-build": "turbo build --concurrency=100% --filter=!@libra/docs",
     "clean": "git clean -xdf node_modules",
     "clean:workspaces": "turbo clean",
     "dev": "turbo dev --parallel",
@@ -59,7 +60,7 @@
     "zod": "^4.1.11"
   },
   "engines": {
-    "node": ">=24",
+    "node": "22.x",
     "npm": ">=11"
   },
   "workspaces": [
