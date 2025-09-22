@@ -113,7 +113,7 @@ function TemplateCard({ template }: TemplateCardProps) {
           <div className="absolute top-3 right-3">
             <Badge variant="secondary" className="bg-gradient-to-r from-orange-500 to-amber-500 text-white border-0 shadow-md">
               <Crown className="mr-1 h-3 w-3" />
-              {m.templateSharing_templateCard_badges_proOnly()}
+              {m.templatesharing_templatecard_badges_proonly3()}
             </Badge>
           </div>
         )}
@@ -123,7 +123,7 @@ function TemplateCard({ template }: TemplateCardProps) {
           <div className="absolute top-3 left-3">
             <Badge variant="secondary" className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 shadow-md">
               <Crown className="mr-1 h-3 w-3" />
-              {m.templateSharing_templateCard_badges_featured()}
+              {m.templatesharing_templatecard_badges_featured2()}
             </Badge>
           </div>
         )}
@@ -140,7 +140,7 @@ function TemplateCard({ template }: TemplateCardProps) {
               templateId={template.id}
               trigger={
                 <Button size="lg" className="shadow-xl">
-                  {m.templateSharing_templateCard_actions_useTemplate()}
+                  {m.templatesharing_templatecard_actions_usetemplate3()}
                 </Button>
               }
             />
@@ -182,7 +182,7 @@ function TemplateCard({ template }: TemplateCardProps) {
               </Badge>
             ) : (
               <Badge variant="outline" className="text-xs border-green-200 text-green-700 bg-green-50">
-                {m.templateSharing_templateCard_badges_free()}
+                {m.templatesharing_templatecard_badges_free2()}
               </Badge>
             )}
           </div>
@@ -263,16 +263,16 @@ export default function TemplatesBrowse() {
   const templates = templatesData?.templates || []
   
   const categories = [
-    { value: 'all', label: m.templateSharing_browse_categories_all() },
-    { value: 'web', label: m.templateSharing_browse_categories_web() },
-    { value: 'mobile', label: m.templateSharing_browse_categories_mobile() },
-    { value: 'desktop', label: m.templateSharing_browse_categories_desktop() },
-    { value: 'api', label: m.templateSharing_browse_categories_api() },
-    { value: 'landing', label: m.templateSharing_browse_categories_landing() },
-    { value: 'portfolio', label: m.templateSharing_browse_categories_portfolio() },
-    { value: 'ecommerce', label: m.templateSharing_browse_categories_ecommerce() },
-    { value: 'blog', label: m.templateSharing_browse_categories_blog() },
-    { value: 'dashboard', label: m.templateSharing_browse_categories_dashboard() },
+    { value: 'all', label: m.templatesharing_browse_categories_all1() },
+    { value: 'web', label: m.templatesharing_browse_categories_web1() },
+    { value: 'mobile', label: m.templatesharing_browse_categories_mobile1() },
+    { value: 'desktop', label: m.templatesharing_browse_categories_desktop1() },
+    { value: 'api', label: m.templatesharing_browse_categories_api1() },
+    { value: 'landing', label: m.templatesharing_browse_categories_landing1() },
+    { value: 'portfolio', label: m.templatesharing_browse_categories_portfolio1() },
+    { value: 'ecommerce', label: m.templatesharing_browse_categories_ecommerce1() },
+    { value: 'blog', label: m.templatesharing_browse_categories_blog1() },
+    { value: 'dashboard', label: m.templatesharing_browse_categories_dashboard1() },
   ]
 
   return (
@@ -281,10 +281,10 @@ export default function TemplatesBrowse() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold tracking-tight text-foreground mb-4">
-            {m.templateSharing_browse_title()}
+            {m.templatesharing_browse_title1()}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {m.templateSharing_browse_description()}
+            {m.templatesharing_browse_description1()}
           </p>
         </div>
 
@@ -293,8 +293,8 @@ export default function TemplatesBrowse() {
           {/* Browse Type Tabs */}
           <Tabs value={browseType} onValueChange={(value) => setBrowseType(value as any)}>
             <TabsList className="grid w-fit grid-cols-2">
-              <TabsTrigger value="templates">{m.templateSharing_browse_tabs_templates()}</TabsTrigger>
-              <TabsTrigger value="components">{m.templateSharing_browse_tabs_components()}</TabsTrigger>
+              <TabsTrigger value="templates">{m.templatesharing_browse_tabs_templates1()}</TabsTrigger>
+              <TabsTrigger value="components">{m.templatesharing_browse_tabs_components1()}</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -303,7 +303,7 @@ export default function TemplatesBrowse() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder={m.templateSharing_browse_searchPlaceholder()}
+                placeholder={m.templatesharing_browse_searchplaceholder2()}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10"
@@ -350,9 +350,9 @@ export default function TemplatesBrowse() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{m.templateSharing_browse_planFilters_all()}</SelectItem>
-                    <SelectItem value="free">{m.templateSharing_browse_planFilters_free()}</SelectItem>
-                    <SelectItem value="pro">{m.templateSharing_browse_planFilters_pro()}</SelectItem>
+                    <SelectItem value="all">{m.templatesharing_browse_planfilters_all1()}</SelectItem>
+                    <SelectItem value="free">{m.templatesharing_browse_planfilters_free1()}</SelectItem>
+                    <SelectItem value="pro">{m.templatesharing_browse_planfilters_pro1()}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -367,11 +367,11 @@ export default function TemplatesBrowse() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="popular">{m.templateSharing_browse_sortBy_popular()}</SelectItem>
-                    <SelectItem value="recent">{m.templateSharing_browse_sortBy_recent()}</SelectItem>
-                    <SelectItem value="most_remakes">{m.templateSharing_browse_sortBy_mostRemakes()}</SelectItem>
-                    <SelectItem value="most_views">{m.templateSharing_browse_sortBy_mostViews()}</SelectItem>
-                    <SelectItem value="most_likes">{m.templateSharing_browse_sortBy_mostLikes()}</SelectItem>
+                    <SelectItem value="popular">{m.templatesharing_browse_sortby_popular1()}</SelectItem>
+                    <SelectItem value="recent">{m.templatesharing_browse_sortby_recent1()}</SelectItem>
+                    <SelectItem value="most_remakes">{m.templatesharing_browse_sortby_mostremakes1()}</SelectItem>
+                    <SelectItem value="most_views">{m.templatesharing_browse_sortby_mostviews1()}</SelectItem>
+                    <SelectItem value="most_likes">{m.templatesharing_browse_sortby_mostlikes1()}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -407,10 +407,10 @@ export default function TemplatesBrowse() {
                       <Copy className="h-8 w-8 text-primary/60" />
                     </div>
                     <h3 className="text-lg font-semibold text-foreground mb-2">
-                      {m.templateSharing_browse_noResults()}
+                      {m.templatesharing_browse_noresults1()}
                     </h3>
                     <p className="text-muted-foreground">
-                      {m.templateSharing_browse_noResultsDescription()}
+                      {m.templatesharing_browse_noresultsdescription1()}
                     </p>
                   </div>
                 )}

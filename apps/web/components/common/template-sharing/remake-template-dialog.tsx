@@ -127,10 +127,10 @@ export function RemakeTemplateDialog({
     <DialogContent className="sm:max-w-[500px]">
       <DialogHeader>
         <DialogTitle>
-          {m.templateSharing_remakeDialog_title()}
+          {m.templatesharing_remakedialog_title2()}
         </DialogTitle>
         <DialogDescription>
-          {m.templateSharing_remakeDialog_description()}
+          {m.templatesharing_remakedialog_description2()}
         </DialogDescription>
       </DialogHeader>
       
@@ -144,10 +144,10 @@ export function RemakeTemplateDialog({
             <Crown className="h-8 w-8 text-orange-500" />
             <div>
               <h3 className="font-semibold text-orange-900">
-                {m.templateSharing_remakeDialog_restrictions_upgradeRequired()}
+                {m.templatesharing_remakedialog_restrictions_upgraderequired3()}
               </h3>
               <p className="text-sm text-orange-700">
-                {m.templateSharing_remakeDialog_restrictions_upgradeDescription()}
+                {m.templatesharing_remakedialog_restrictions_upgradedescription3()}
               </p>
             </div>
           </div>
@@ -160,10 +160,10 @@ export function RemakeTemplateDialog({
                 if (onOpenChange) onOpenChange(false)
               }}
             >
-              {m.templateSharing_remakeDialog_actions_cancel()}
+              {m.templatesharing_remakedialog_actions_cancel2()}
             </Button>
             <Button>
-              {m.templateSharing_remakeDialog_restrictions_upgradeButton()}
+              {m.templatesharing_remakedialog_restrictions_upgradebutton3()}
             </Button>
           </div>
         </div>
@@ -176,10 +176,10 @@ export function RemakeTemplateDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{m.templateSharing_remakeDialog_form_name()}</FormLabel>
+                  <FormLabel>{m.templatesharing_remakedialog_form_name2()}</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder={m.templateSharing_remakeDialog_form_namePlaceholder()} 
+                      placeholder={m.templatesharing_remakedialog_form_nameplaceholder3()} 
                       {...field} 
                     />
                   </FormControl>
@@ -197,10 +197,10 @@ export function RemakeTemplateDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{m.templateSharing_remakeDialog_form_description()}</FormLabel>
+                  <FormLabel>{m.templatesharing_remakedialog_form_description2()}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder={m.templateSharing_remakeDialog_form_descriptionPlaceholder()}
+                      placeholder={m.templatesharing_remakedialog_form_descriptionplaceholder3()}
                       className="min-h-[80px]"
                       {...field}
                     />
@@ -224,7 +224,7 @@ export function RemakeTemplateDialog({
                 }}
                 disabled={remakeTemplateMutation.isPending}
               >
-                {m.templateSharing_remakeDialog_actions_cancel()}
+                {m.templatesharing_remakedialog_actions_cancel2()}
               </Button>
               <Button
                 type="submit"
@@ -233,10 +233,10 @@ export function RemakeTemplateDialog({
                 {remakeTemplateMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {m.templateSharing_remakeDialog_actions_creating()}
+                    {m.templatesharing_remakedialog_actions_creating2()}
                   </>
                 ) : (
-                  m.templateSharing_remakeDialog_actions_create()
+                  m.templatesharing_remakedialog_actions_create2()
                 )}
               </Button>
             </div>

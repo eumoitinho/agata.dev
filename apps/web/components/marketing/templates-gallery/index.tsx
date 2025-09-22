@@ -111,7 +111,7 @@ function TemplateCard({ template }: TemplateCardProps) {
           <div className="absolute top-3 right-3">
             <Badge variant="secondary" className="bg-gradient-to-r from-orange-500 to-amber-500 text-white border-0 shadow-md">
               <Crown className="mr-1 h-3 w-3" />
-              {m.templateSharing_templateCard_badges_proOnly()}
+              {m.templatesharing_templatecard_badges_proonly3()}
             </Badge>
           </div>
         )}
@@ -121,7 +121,7 @@ function TemplateCard({ template }: TemplateCardProps) {
           <div className="absolute top-3 left-3">
             <Badge variant="secondary" className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 shadow-md">
               <Zap className="mr-1 h-3 w-3" />
-              {m.templateSharing_templateCard_badges_featured()}
+              {m.templatesharing_templatecard_badges_featured2()}
             </Badge>
           </div>
         )}
@@ -138,7 +138,7 @@ function TemplateCard({ template }: TemplateCardProps) {
               templateId={template.id}
               trigger={
                 <Button size="lg" className="shadow-xl">
-                  {m.templateSharing_templateCard_actions_useTemplate()}
+                  {m.templatesharing_templatecard_actions_usetemplate3()}
                 </Button>
               }
             />
@@ -180,7 +180,7 @@ function TemplateCard({ template }: TemplateCardProps) {
               </Badge>
             ) : (
               <Badge variant="outline" className="text-xs border-green-200 text-green-700 bg-green-50">
-                {m.templateSharing_templateCard_badges_free()}
+                {m.templatesharing_templatecard_badges_free2()}
               </Badge>
             )}
           </div>
@@ -242,8 +242,8 @@ interface TemplatesGalleryProps {
 }
 
 export default function TemplatesGallery({
-  title = m.templateSharing_gallery_title(),
-  description = m.templateSharing_gallery_description(),
+  title = m.templatesharing_gallery_title1(),
+  description = m.templatesharing_gallery_description1(),
   showHeader = true,
   limit = 6,
   className,
@@ -307,7 +307,7 @@ export default function TemplatesGallery({
           <div className="text-center">
             <Button asChild variant="outline" size="lg">
               <Link href="/browse">
-                {m.templateSharing_gallery_browseAll()}
+                {m.templatesharing_gallery_browseall2()}
               </Link>
             </Button>
           </div>
@@ -320,7 +320,7 @@ export default function TemplatesGallery({
               <Copy className="h-8 w-8 text-primary/60" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              {m.templateSharing_gallery_noTemplates()}
+              {m.templatesharing_gallery_notemplates2()}
             </h3>
             <p className="text-muted-foreground">
               Be the first to share a template with the community!

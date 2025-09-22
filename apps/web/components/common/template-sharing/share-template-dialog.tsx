@@ -135,15 +135,15 @@ export function ShareTemplateDialog({
   }
   
   const categories = [
-    { value: 'web', label: m.templateSharing_browse_categories_web() },
-    { value: 'mobile', label: m.templateSharing_browse_categories_mobile() },
-    { value: 'desktop', label: m.templateSharing_browse_categories_desktop() },
-    { value: 'api', label: m.templateSharing_browse_categories_api() },
-    { value: 'landing', label: m.templateSharing_browse_categories_landing() },
-    { value: 'portfolio', label: m.templateSharing_browse_categories_portfolio() },
-    { value: 'ecommerce', label: m.templateSharing_browse_categories_ecommerce() },
-    { value: 'blog', label: m.templateSharing_browse_categories_blog() },
-    { value: 'dashboard', label: m.templateSharing_browse_categories_dashboard() },
+    { value: 'web', label: m.templatesharing_browse_categories_web1() },
+    { value: 'mobile', label: m.templatesharing_browse_categories_mobile1() },
+    { value: 'desktop', label: m.templatesharing_browse_categories_desktop1() },
+    { value: 'api', label: m.templatesharing_browse_categories_api1() },
+    { value: 'landing', label: m.templatesharing_browse_categories_landing1() },
+    { value: 'portfolio', label: m.templatesharing_browse_categories_portfolio1() },
+    { value: 'ecommerce', label: m.templatesharing_browse_categories_ecommerce1() },
+    { value: 'blog', label: m.templatesharing_browse_categories_blog1() },
+    { value: 'dashboard', label: m.templatesharing_browse_categories_dashboard1() },
   ]
   
   const isUserPremium = isPremiumPlan(templatePlan)
@@ -153,10 +153,10 @@ export function ShareTemplateDialog({
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
           <Share2 className="h-5 w-5" />
-          {m.templateSharing_shareDialog_title()}
+          {m.templatesharing_sharedialog_title2()}
         </DialogTitle>
         <DialogDescription>
-          {m.templateSharing_shareDialog_description()}
+          {m.templatesharing_sharedialog_description2()}
         </DialogDescription>
       </DialogHeader>
       
@@ -168,10 +168,10 @@ export function ShareTemplateDialog({
             name="title"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{m.templateSharing_shareDialog_form_title()}</FormLabel>
+                <FormLabel>{m.templatesharing_sharedialog_form_title2()}</FormLabel>
                 <FormControl>
                   <Input 
-                    placeholder={m.templateSharing_shareDialog_form_titlePlaceholder()} 
+                    placeholder={m.templatesharing_sharedialog_form_titleplaceholder3()} 
                     {...field} 
                   />
                 </FormControl>
@@ -189,10 +189,10 @@ export function ShareTemplateDialog({
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{m.templateSharing_shareDialog_form_description()}</FormLabel>
+                <FormLabel>{m.templatesharing_sharedialog_form_description2()}</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder={m.templateSharing_shareDialog_form_descriptionPlaceholder()}
+                    placeholder={m.templatesharing_sharedialog_form_descriptionplaceholder3()}
                     className="min-h-[100px]"
                     {...field}
                   />
@@ -211,11 +211,11 @@ export function ShareTemplateDialog({
             name="category"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{m.templateSharing_shareDialog_form_category()}</FormLabel>
+                <FormLabel>{m.templatesharing_sharedialog_form_category2()}</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder={m.templateSharing_shareDialog_form_categoryPlaceholder()} />
+                      <SelectValue placeholder={m.templatesharing_sharedialog_form_categoryplaceholder3()} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -240,11 +240,11 @@ export function ShareTemplateDialog({
             name="tags"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{m.templateSharing_shareDialog_form_tags()}</FormLabel>
+                <FormLabel>{m.templatesharing_sharedialog_form_tags2()}</FormLabel>
                 <div className="space-y-3">
                   <div className="flex gap-2">
                     <Input
-                      placeholder={m.templateSharing_shareDialog_form_tagsPlaceholder()}
+                      placeholder={m.templatesharing_sharedialog_form_tagsplaceholder3()}
                       value={currentTag}
                       onChange={(e) => setCurrentTag(e.target.value)}
                       onKeyPress={(e) => {
@@ -260,7 +260,7 @@ export function ShareTemplateDialog({
                       onClick={addTag}
                       disabled={!currentTag.trim() || field.value.length >= 10}
                     >
-                      {m.templateSharing_shareDialog_form_addTag()}
+                      {m.templatesharing_sharedialog_form_addtag3()}
                     </Button>
                   </div>
                   
@@ -295,10 +295,10 @@ export function ShareTemplateDialog({
                   <Crown className="h-6 w-6 text-orange-500" />
                   <div>
                     <h3 className="font-semibold text-orange-900">
-                      {m.templateSharing_shareDialog_planInfo_proTemplate()}
+                      {m.templatesharing_sharedialog_planinfo_protemplate4()}
                     </h3>
                     <p className="text-sm text-orange-700">
-                      {m.templateSharing_shareDialog_planInfo_proDescription()}
+                      {m.templatesharing_sharedialog_planinfo_prodescription4()}
                     </p>
                   </div>
                 </>
@@ -307,10 +307,10 @@ export function ShareTemplateDialog({
                   <Globe className="h-6 w-6 text-green-500" />
                   <div>
                     <h3 className="font-semibold text-green-900">
-                      {m.templateSharing_shareDialog_planInfo_freeTemplate()}
+                      {m.templatesharing_sharedialog_planinfo_freetemplate4()}
                     </h3>
                     <p className="text-sm text-green-700">
-                      {m.templateSharing_shareDialog_planInfo_freeDescription()}
+                      {m.templatesharing_sharedialog_planinfo_freedescription4()}
                     </p>
                   </div>
                 </>
@@ -329,7 +329,7 @@ export function ShareTemplateDialog({
               }}
               disabled={shareTemplateMutation.isPending}
             >
-              {m.templateSharing_shareDialog_actions_cancel()}
+              {m.templatesharing_sharedialog_actions_cancel2()}
             </Button>
             <Button
               type="submit"
@@ -338,12 +338,12 @@ export function ShareTemplateDialog({
               {shareTemplateMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {m.templateSharing_shareDialog_actions_sharing()}
+                  {m.templatesharing_sharedialog_actions_sharing2()}
                 </>
               ) : (
                 <>
                   <Share2 className="mr-2 h-4 w-4" />
-                  {m.templateSharing_shareDialog_actions_share()}
+                  {m.templatesharing_sharedialog_actions_share2()}
                 </>
               )}
             </Button>
