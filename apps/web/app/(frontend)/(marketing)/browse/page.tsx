@@ -18,19 +18,13 @@
  *
  */
 
-import Bento from '@/components/marketing/bento'
-import CTA from '@/components/marketing/cta'
-import FAQ from '@/components/marketing/faq'
-import Features from '@/components/marketing/features'
-import Footer from '@/components/marketing/footer'
-import Hero from '@/components/marketing/hero/index'
+import TemplatesBrowse from '@/components/marketing/templates-browse'
 import Navbar from '@/components/marketing/nav'
-import Pricing from '@/components/marketing/price'
-import TemplatesGallery from '@/components/marketing/templates-gallery'
+import Footer from '@/components/marketing/footer'
 import { initAuth } from '@libra/auth/auth-server'
 import { headers } from 'next/headers'
 
-export default async function Home() {
+export default async function BrowsePage() {
   // Check authentication status on server side
   let isAuthenticated = false
   try {
@@ -46,26 +40,9 @@ export default async function Home() {
   }
 
   return (
-    <main className='min-h-screen w-full overflow-hidden bg-[var(--background-landing)] text-[var(--foreground-landing)] '>
+    <main className='min-h-screen w-full bg-[var(--background-landing)] text-[var(--foreground-landing)]'>
       <Navbar isAuthenticated={isAuthenticated} />
-      <Hero />
-
-      <TemplatesGallery />
-
-      <Bento />
-
-      {/*<Logos />*/}
-      {/*<Items />*/}
-      {/*<Stats />*/}
-
-      <Features />
-
-      <Pricing />
-
-      <FAQ />
-
-      <CTA />
-
+      <TemplatesBrowse />
       <Footer />
     </main>
   )
