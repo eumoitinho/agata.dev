@@ -47,7 +47,6 @@ import { Textarea } from '@libra/ui/components/textarea'
 import { Badge } from '@libra/ui/components/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@libra/ui/components/select'
 import { useTRPC } from '@/trpc/client'
-import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Loader2, Share2, Crown, Globe, Lock } from 'lucide-react'
 import * as m from '@/paraglide/messages'
@@ -95,8 +94,7 @@ export function ShareTemplateDialog({
     },
   })
   
-  const shareTemplateMutation = useMutation({
-    ...trpc.template.share.useMutation(),
+  const shareTemplateMutation = trpc.template?.share?.useMutation({
     onSuccess: () => {
       toast.success('Template shared successfully!', {
         description: 'Your template is now available for the community to use.',
@@ -105,7 +103,7 @@ export function ShareTemplateDialog({
       setIsOpen(false)
       if (onOpenChange) onOpenChange(false)
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error('Failed to share template', {
         description: error.message || 'Please try again later.',
       })
@@ -113,6 +111,11 @@ export function ShareTemplateDialog({
   })
   
   const handleSubmit = (data: ShareTemplateForm) => {
+    if (!shareTemplateMutation?.mutate) {
+      toast.error('Template system not available')
+      return
+    }
+    
     shareTemplateMutation.mutate({
       projectId,
       ...data,
@@ -135,15 +138,15 @@ export function ShareTemplateDialog({
   }
   
   const categories = [
-    { value: 'web', label: m.templatesharing_browse_categories_web1() },
-    { value: 'mobile', label: m.templatesharing_browse_categories_mobile1() },
-    { value: 'desktop', label: m.templatesharing_browse_categories_desktop1() },
-    { value: 'api', label: m.templatesharing_browse_categories_api1() },
-    { value: 'landing', label: m.templatesharing_browse_categories_landing1() },
-    { value: 'portfolio', label: m.templatesharing_browse_categories_portfolio1() },
-    { value: 'ecommerce', label: m.templatesharing_browse_categories_ecommerce1() },
-    { value: 'blog', label: m.templatesharing_browse_categories_blog1() },
-    { value: 'dashboard', label: m.templatesharing_browse_categories_dashboard1() },
+    { value: 'web', label: m['templateSharing.browse.categories.web']?.() },
+    { value: 'mobile', label: m['templateSharing.browse.categories.mobile']?.() },
+    { value: 'desktop', label: m['templateSharing.browse.categories.desktop']?.() },
+    { value: 'api', label: m['templateSharing.browse.categories.api']?.() },
+    { value: 'landing', label: m['templateSharing.browse.categories.landing']?.() },
+    { value: 'portfolio', label: m['templateSharing.browse.categories.portfolio']?.() },
+    { value: 'ecommerce', label: m['templateSharing.browse.categories.ecommerce']?.() },
+    { value: 'blog', label: m['templateSharing.browse.categories.blog']?.() },
+    { value: 'dashboard', label: m['templateSharing.browse.categories.dashboard']?.() },
   ]
   
   const isUserPremium = isPremiumPlan(templatePlan)
@@ -153,10 +156,10 @@ export function ShareTemplateDialog({
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
           <Share2 className="h-5 w-5" />
-          {m.templatesharing_sharedialog_title2()}
+          {m['templateSharing.shareDialog.title']?.()}
         </DialogTitle>
         <DialogDescription>
-          {m.templatesharing_sharedialog_description2()}
+          {m['templateSharing.shareDialog.description']?.()}
         </DialogDescription>
       </DialogHeader>
       
@@ -168,10 +171,10 @@ export function ShareTemplateDialog({
             name="title"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{m.templatesharing_sharedialog_form_title2()}</FormLabel>
+                <FormLabel>{m['templateSharing.shareDialog.form.title']?.()}</FormLabel>
                 <FormControl>
                   <Input 
-                    placeholder={m.templatesharing_sharedialog_form_titleplaceholder3()} 
+                    placeholder={m['templateSharing.shareDialog.form.titlePlaceholder']?.()} 
                     {...field} 
                   />
                 </FormControl>
@@ -189,10 +192,10 @@ export function ShareTemplateDialog({
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{m.templatesharing_sharedialog_form_description2()}</FormLabel>
+                <FormLabel>{m['templateSharing.shareDialog.form.description']?.()}</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder={m.templatesharing_sharedialog_form_descriptionplaceholder3()}
+                    placeholder={m['templateSharing.shareDialog.form.descriptionPlaceholder']?.()}
                     className="min-h-[100px]"
                     {...field}
                   />
@@ -211,11 +214,11 @@ export function ShareTemplateDialog({
             name="category"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{m.templatesharing_sharedialog_form_category2()}</FormLabel>
+                <FormLabel>{m['templateSharing.shareDialog.form.category']?.()}</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder={m.templatesharing_sharedialog_form_categoryplaceholder3()} />
+                      <SelectValue placeholder={m['templateSharing.shareDialog.form.categoryPlaceholder']?.()} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -240,11 +243,11 @@ export function ShareTemplateDialog({
             name="tags"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{m.templatesharing_sharedialog_form_tags2()}</FormLabel>
+                <FormLabel>{m['templateSharing.shareDialog.form.tags']?.()}</FormLabel>
                 <div className="space-y-3">
                   <div className="flex gap-2">
                     <Input
-                      placeholder={m.templatesharing_sharedialog_form_tagsplaceholder3()}
+                      placeholder={m['templateSharing.shareDialog.form.tagsPlaceholder']?.()}
                       value={currentTag}
                       onChange={(e) => setCurrentTag(e.target.value)}
                       onKeyPress={(e) => {
@@ -260,7 +263,7 @@ export function ShareTemplateDialog({
                       onClick={addTag}
                       disabled={!currentTag.trim() || field.value.length >= 10}
                     >
-                      {m.templatesharing_sharedialog_form_addtag3()}
+                      {m['templateSharing.shareDialog.form.addTag']?.()}
                     </Button>
                   </div>
                   
@@ -295,10 +298,10 @@ export function ShareTemplateDialog({
                   <Crown className="h-6 w-6 text-orange-500" />
                   <div>
                     <h3 className="font-semibold text-orange-900">
-                      {m.templatesharing_sharedialog_planinfo_protemplate4()}
+                      {m['templateSharing.shareDialog.planInfo.proTemplate']?.()}
                     </h3>
                     <p className="text-sm text-orange-700">
-                      {m.templatesharing_sharedialog_planinfo_prodescription4()}
+                      {m['templateSharing.shareDialog.planInfo.proDescription']?.()}
                     </p>
                   </div>
                 </>
@@ -307,10 +310,10 @@ export function ShareTemplateDialog({
                   <Globe className="h-6 w-6 text-green-500" />
                   <div>
                     <h3 className="font-semibold text-green-900">
-                      {m.templatesharing_sharedialog_planinfo_freetemplate4()}
+                      {m['templateSharing.shareDialog.planInfo.freeTemplate']?.()}
                     </h3>
                     <p className="text-sm text-green-700">
-                      {m.templatesharing_sharedialog_planinfo_freedescription4()}
+                      {m['templateSharing.shareDialog.planInfo.freeDescription']?.()}
                     </p>
                   </div>
                 </>
@@ -329,7 +332,7 @@ export function ShareTemplateDialog({
               }}
               disabled={shareTemplateMutation.isPending}
             >
-              {m.templatesharing_sharedialog_actions_cancel2()}
+              {m['templateSharing.shareDialog.actions.cancel']?.()}
             </Button>
             <Button
               type="submit"
@@ -338,12 +341,12 @@ export function ShareTemplateDialog({
               {shareTemplateMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {m.templatesharing_sharedialog_actions_sharing2()}
+                  {m['templateSharing.shareDialog.actions.sharing']?.()}
                 </>
               ) : (
                 <>
                   <Share2 className="mr-2 h-4 w-4" />
-                  {m.templatesharing_sharedialog_actions_share2()}
+                  {m['templateSharing.shareDialog.actions.share']?.()}
                 </>
               )}
             </Button>

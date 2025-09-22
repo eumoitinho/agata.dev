@@ -24,8 +24,11 @@ import FAQ from '@/components/marketing/faq'
 import Features from '@/components/marketing/features'
 import Footer from '@/components/marketing/footer'
 import Hero from '@/components/marketing/hero/index'
+import { HeroMockupSection } from '@/components/marketing/hero/hero-mockup-section'
+import { LandingMotionSections } from './landing-motion-sections'
 import Navbar from '@/components/marketing/nav'
 import Pricing from '@/components/marketing/price'
+import TemplatesBrowse from '@/components/marketing/templates-browse'
 import TemplatesGallery from '@/components/marketing/templates-gallery'
 import { initAuth } from '@libra/auth/auth-server'
 import { headers } from 'next/headers'
@@ -48,10 +51,10 @@ export default async function Home() {
   return (
     <main className='min-h-screen w-full overflow-hidden bg-[var(--background-landing)] text-[var(--foreground-landing)] '>
       <Navbar isAuthenticated={isAuthenticated} />
-      <Hero />
+      {/* Client-side motion sections */}
+      <LandingMotionSections />
 
-      <TemplatesGallery />
-
+  {/* <TemplatesGallery /> */}
       <Bento />
 
       {/*<Logos />*/}

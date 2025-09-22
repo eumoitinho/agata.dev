@@ -203,8 +203,8 @@ function getGenericMessage(status: number): string {
 /**
  * Simple error handler that works with any Hono context
  */
-export function createErrorHandler(service = 'unknown') {
-  return async (err: Error, c: Context) => {
+export function createErrorHandler(service = 'unknown') : (err: Error, c: Context) => Promise<Response> {
+  return async (err: Error, c: Context): Promise<Response> => {
     // Get request ID or generate one inside the handler
     let requestId: string
     try {

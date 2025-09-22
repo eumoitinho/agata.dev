@@ -45,7 +45,6 @@ import { Button } from '@libra/ui/components/button'
 import { Input } from '@libra/ui/components/input'
 import { Textarea } from '@libra/ui/components/textarea'
 import { useTRPC } from '@/trpc/client'
-import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Loader2, Lock, Crown } from 'lucide-react'
 import * as m from '@/paraglide/messages'
@@ -78,11 +77,12 @@ export function RemakeTemplateDialog({
   const [isOpen, setIsOpen] = useState(false)
   const { templatePlan: userPlan } = useUserPlan()
   
-  // Get template details to check access
-  const { data: template, isLoading: isLoadingTemplate } = trpc.template.get.useQuery({
-    id: templateId,
-    trackView: false,
-  })
+  // Get template details to check access (guard against undefined hook during build or partial injection)
+  const templateGet: any = (trpc as any).template?.get
+  const templateQuery = templateGet?.useQuery
+    ? templateGet.useQuery({ id: templateId, trackView: false })
+    : { data: undefined, isLoading: false }
+  const { data: template, isLoading: isLoadingTemplate } = templateQuery as { data: any; isLoading: boolean }
   
   const form = useForm<RemakeTemplateForm>({
     resolver: zodResolver(remakeTemplateSchema),
@@ -92,9 +92,9 @@ export function RemakeTemplateDialog({
     },
   })
   
-  const remakeTemplateMutation = useMutation({
-    ...trpc.project.specialOperations.createFromTemplate.useMutation(),
-    onSuccess: (data) => {
+  const remakeTemplateMutation = (trpc.project as any)?.specialOperations?.createFromTemplate?.useMutation
+    ? (trpc.project as any).specialOperations.createFromTemplate.useMutation({
+    onSuccess: (data: any) => {
       toast.success('Project created successfully!', {
         description: 'Your new project is ready to use.',
       })
@@ -105,14 +105,20 @@ export function RemakeTemplateDialog({
       // Navigate to the new project
       router.push(`/project/${data.id}`)
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error('Failed to create project', {
         description: error.message || 'Please try again later.',
       })
     },
-  })
+    })
+    : { mutate: undefined, isPending: false }
   
   const handleSubmit = (data: RemakeTemplateForm) => {
+    if (!remakeTemplateMutation?.mutate) {
+      toast.error('Template system not available')
+      return
+    }
+    
     remakeTemplateMutation.mutate({
       templateId,
       name: data.name,
@@ -127,10 +133,10 @@ export function RemakeTemplateDialog({
     <DialogContent className="sm:max-w-[500px]">
       <DialogHeader>
         <DialogTitle>
-          {m.templatesharing_remakedialog_title2()}
+          {m['templateSharing.remakeDialog.title']?.()}
         </DialogTitle>
         <DialogDescription>
-          {m.templatesharing_remakedialog_description2()}
+          {m['templateSharing.remakeDialog.description']?.()}
         </DialogDescription>
       </DialogHeader>
       
@@ -144,10 +150,10 @@ export function RemakeTemplateDialog({
             <Crown className="h-8 w-8 text-orange-500" />
             <div>
               <h3 className="font-semibold text-orange-900">
-                {m.templatesharing_remakedialog_restrictions_upgraderequired3()}
+                {m['templateSharing.remakeDialog.restrictions.upgradeRequired']?.()}
               </h3>
               <p className="text-sm text-orange-700">
-                {m.templatesharing_remakedialog_restrictions_upgradedescription3()}
+                {m['templateSharing.remakeDialog.restrictions.upgradeDescription']?.()}
               </p>
             </div>
           </div>
@@ -160,10 +166,10 @@ export function RemakeTemplateDialog({
                 if (onOpenChange) onOpenChange(false)
               }}
             >
-              {m.templatesharing_remakedialog_actions_cancel2()}
+              {m['templateSharing.remakeDialog.actions.cancel']?.()}
             </Button>
             <Button>
-              {m.templatesharing_remakedialog_restrictions_upgradebutton3()}
+              {m['templateSharing.remakeDialog.restrictions.upgradeButton']?.()}
             </Button>
           </div>
         </div>
@@ -176,10 +182,10 @@ export function RemakeTemplateDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{m.templatesharing_remakedialog_form_name2()}</FormLabel>
+                  <FormLabel>{m['templateSharing.remakeDialog.form.name']?.()}</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder={m.templatesharing_remakedialog_form_nameplaceholder3()} 
+                      placeholder={m['templateSharing.remakeDialog.form.namePlaceholder']?.()} 
                       {...field} 
                     />
                   </FormControl>
@@ -197,10 +203,10 @@ export function RemakeTemplateDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{m.templatesharing_remakedialog_form_description2()}</FormLabel>
+                  <FormLabel>{m['templateSharing.remakeDialog.form.description']?.()}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder={m.templatesharing_remakedialog_form_descriptionplaceholder3()}
+                      placeholder={m['templateSharing.remakeDialog.form.descriptionPlaceholder']?.()}
                       className="min-h-[80px]"
                       {...field}
                     />
@@ -224,7 +230,7 @@ export function RemakeTemplateDialog({
                 }}
                 disabled={remakeTemplateMutation.isPending}
               >
-                {m.templatesharing_remakedialog_actions_cancel2()}
+                {m['templateSharing.remakeDialog.actions.cancel']?.()}
               </Button>
               <Button
                 type="submit"
@@ -233,10 +239,10 @@ export function RemakeTemplateDialog({
                 {remakeTemplateMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {m.templatesharing_remakedialog_actions_creating2()}
+                    {m['templateSharing.remakeDialog.actions.creating']?.()}
                   </>
                 ) : (
-                  m.templatesharing_remakedialog_actions_create2()
+                  m['templateSharing.remakeDialog.actions.create']?.()
                 )}
               </Button>
             </div>

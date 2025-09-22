@@ -65,4 +65,7 @@ export const projectRouter = {
   // Special operations
   heroProjectCreate: specialOperations.heroProjectCreate,
   fork: specialOperations.fork,
+  specialOperations: {
+    createFromTemplate: specialOperations.createFromTemplate,
+  },
 } satisfies TRPCRouterRecord

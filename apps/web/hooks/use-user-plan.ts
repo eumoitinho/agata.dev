@@ -18,27 +18,18 @@
  *
  */
 
-import { useTRPC } from '@/trpc/client'
-import { useQuery } from '@tanstack/react-query'
 import { mapSystemPlanToTemplatePlan, type TemplatePlan } from '@/lib/template-utils'
 
 export function useUserPlan() {
-  const trpc = useTRPC()
-  
-  const { data: subscription, isLoading } = useQuery({
-    ...trpc.subscription.get.queryOptions(),
-    retry: 1,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  })
-  
-  // Extract plan from subscription or default to free
-  const systemPlan = subscription?.plan?.name || 'free'
+  // TODO: Implement proper subscription query when subscription router is available
+  // For now, default to free plan
+  const systemPlan = 'free'
   const templatePlan: TemplatePlan = mapSystemPlanToTemplatePlan(systemPlan)
   
   return {
     templatePlan,
     systemPlan,
-    isLoading,
-    subscription,
+    isLoading: false,
+    subscription: null,
   }
 }

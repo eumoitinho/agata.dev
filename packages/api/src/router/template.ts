@@ -220,7 +220,7 @@ export const templateRouter = createTRPCRouter({
         try {
           // Insert view record
           await db.insert(templateView).values({
-            templateId: templateData.id,
+            templateId: templateData!.id,
             viewerUserId: ctx.session?.user?.id || null,
             viewerOrganizationId: null, // Would need proper org context
             // Note: viewerPlan would need to be fetched from user subscription
@@ -236,7 +236,7 @@ export const templateRouter = createTRPCRouter({
               statsViews: sql`${sharedTemplate.statsViews} + 1`,
               updatedAt: new Date(),
             })
-            .where(eq(sharedTemplate.id, templateData.id))
+            .where(eq(sharedTemplate.id, templateData!.id))
         } catch (error) {
           // Non-critical error - continue even if view tracking fails
           console.warn('Failed to track template view:', error)
@@ -305,7 +305,7 @@ export const templateRouter = createTRPCRouter({
       const userPlan = 'free' // TODO: Implement actual plan detection
       
       // Create shared template
-      const [template] = await db
+      const [insertedTemplate] = await db
         .insert(sharedTemplate)
         .values({
           title: input.title,
@@ -317,15 +317,22 @@ export const templateRouter = createTRPCRouter({
           creatorOrganizationId: orgId,
           creatorPlanAtShare: userPlan,
           isPublic: input.isPublic,
-          templateType: projectData.templateType,
-          thumbnailUrl: projectData.previewImageUrl,
-          previewUrl: projectData.productionDeployUrl,
-          sourceCode: projectData.messageHistory, // Store project configuration
+          templateType: projectData!.templateType,
+          thumbnailUrl: projectData!.previewImageUrl,
+          previewUrl: projectData!.productionDeployUrl,
+          sourceCode: projectData!.messageHistory, // Store project configuration
         })
         .returning({ id: sharedTemplate.id })
       
+      if (!insertedTemplate) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to insert template',
+        })
+      }
+
       return {
-        templateId: template.id,
+        templateId: insertedTemplate.id,
         message: 'Template shared successfully',
       }
     }),

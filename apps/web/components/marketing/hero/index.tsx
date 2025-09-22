@@ -23,10 +23,10 @@
 import { Section } from '@libra/ui/components/section'
 import { cn } from '@libra/ui/lib/utils'
 import { AppDescriptionForm } from './app-description-form'
-import { HeroButtons } from './hero-buttons'
 import { HeroHeader } from './hero-header'
-import { HeroMockup } from './hero-mockup'
 import type { HeroProps } from './types'
+import { Button } from '@libra/ui/components/button'
+import { ArrowDown } from 'lucide-react'
 
 /**
  * Main Hero component that integrates all subcomponents
@@ -34,18 +34,33 @@ import type { HeroProps } from './types'
 export default function Hero({ title, description, mockup, badge, buttons, className }: HeroProps) {
 
   return (
-    <Section className={cn('fade-bottom overflow-hidden pb-0 sm:pb-0 md:pb-0', className)}>
-      <div className='max-w-container mx-auto flex flex-col gap-4 sm:gap-6 md:gap-8 px-4 sm:px-6 lg:px-8 pt-2 sm:pt-4 md:pt-6 lg:pt-8'>
-        <div className='flex flex-col items-center gap-3 text-center sm:gap-4 md:gap-5'>
+    <Section className={cn('overflow-hidden pb-0', className)}>
+      <div className='max-w-container mx-auto flex flex-col gap-4 sm:gap-5 md:gap-6 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 md:pt-8'>
+        <div className='flex flex-col items-center gap-3 text-center sm:gap-4'>
           <HeroHeader title={title} description={description} badge={badge} />
 
           <AppDescriptionForm
           />
 
-          {/* Buttons always visible, no conditional rendering */}
-          <HeroButtons buttons={buttons} />
+          {/* Único botão: Scroll para templates */}
+          <div className="mt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const el = document.getElementById('templates') || document.getElementById('templates-anchor')
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }
+              }}
+              className="gap-1 group"
+            >
+              <ArrowDown className="h-4 w-4 transition-transform group-hover:translate-y-0.5" />
+              <span>Explorar templates</span>
+            </Button>
+          </div>
 
-          <HeroMockup mockup={mockup} />
+          {/* Mockup moved to separate HeroMockupSection component for flexible ordering */}
         </div>
       </div>
     </Section>
