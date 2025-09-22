@@ -2385,6 +2385,118 @@
       "companyName": "Libra AI"
     }
   },
+  "templateSharing": {
+    "gallery": {
+      "title": "Community Templates",
+      "description": "Discover amazing templates created by our community",
+      "browseAll": "Browse All Templates",
+      "noTemplates": "No templates yet",
+      "noTemplatesDescription": "Be the first to share a template with the community!"
+    },
+    "templateCard": {
+      "badges": {
+        "proOnly": "Pro Only",
+        "featured": "Featured",
+        "free": "Free"
+      },
+      "actions": {
+        "useTemplate": "Use Template",
+        "viewTemplate": "View Template",
+        "shareTemplate": "Share Template"
+      },
+      "stats": {
+        "views": "views",
+        "remakes": "remakes", 
+        "likes": "likes"
+      }
+    },
+    "browse": {
+      "title": "Browse Templates",
+      "description": "Find the perfect template for your next project",
+      "searchPlaceholder": "Search templates...",
+      "categories": {
+        "all": "All Categories",
+        "web": "Web App",
+        "mobile": "Mobile App",
+        "desktop": "Desktop App",
+        "api": "API",
+        "landing": "Landing Page",
+        "portfolio": "Portfolio",
+        "ecommerce": "E-commerce",
+        "blog": "Blog",
+        "dashboard": "Dashboard"
+      },
+      "planFilters": {
+        "all": "All Plans",
+        "free": "Free Only",
+        "pro": "Pro Only"
+      },
+      "sortBy": {
+        "popular": "Popular",
+        "recent": "Recent",
+        "mostRemakes": "Most Remakes",
+        "mostViews": "Most Views",
+        "mostLikes": "Most Likes"
+      },
+      "noResults": "No templates found",
+      "noResultsDescription": "Try adjusting your search or filters",
+      "tabs": {
+        "templates": "Templates",
+        "components": "Components"
+      }
+    },
+    "shareDialog": {
+      "title": "Share as Template",
+      "description": "Share your project with the community so others can use it as a starting point",
+      "form": {
+        "title": "Template Title",
+        "titlePlaceholder": "Enter a descriptive title...",
+        "description": "Description",
+        "descriptionPlaceholder": "Describe what your template does, what technologies it uses, and what problems it solves...",
+        "category": "Category",
+        "categoryPlaceholder": "Select a category",
+        "tags": "Tags",
+        "tagsPlaceholder": "Add tags (e.g., react, typescript, tailwind)...",
+        "addTag": "Add",
+        "visibility": "Visibility",
+        "public": "Public Template",
+        "private": "Private Template",
+        "publicDescription": "Anyone can discover and use this template",
+        "privateDescription": "Only you can access this template (coming soon)"
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "share": "Share Template",
+        "sharing": "Sharing..."
+      },
+      "planInfo": {
+        "freeTemplate": "Free Template",
+        "freeDescription": "Anyone can use this template",
+        "proTemplate": "Pro Template", 
+        "proDescription": "Only subscribers can use this template"
+      }
+    },
+    "remakeDialog": {
+      "title": "Use Template",
+      "description": "Create a new project based on this template",
+      "form": {
+        "name": "Project Name",
+        "namePlaceholder": "Enter a name for your new project...",
+        "description": "Description",
+        "descriptionPlaceholder": "Describe what you'll build with this template..."
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "create": "Create Project",
+        "creating": "Creating..."
+      },
+      "restrictions": {
+        "upgradeRequired": "Upgrade Required",
+        "upgradeDescription": "This is a premium template. Upgrade to Pro to use it.",
+        "upgradeButton": "Upgrade to Pro"
+      }
+    }
+  },
   "hero_examples_title": "App Ideas Examples",
   "hero_examples_subtitle": "Click any example to apply"
 }
