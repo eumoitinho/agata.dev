@@ -126,17 +126,17 @@ export function ShareTemplateDialog({
   }
   
   const addTag = () => {
-    if (currentTag.trim() && !form.getValues('tags').includes(currentTag.trim())) {
-      const currentTags = form.getValues('tags')
+    if (currentTag.trim() && !(form.getValues('tags') ?? []).includes(currentTag.trim())) {
+      const currentTags = form.getValues('tags') ?? []
       if (currentTags.length < 10) {
         form.setValue('tags', [...currentTags, currentTag.trim()])
         setCurrentTag('')
       }
     }
   }
-  
+
   const removeTag = (tagToRemove: string) => {
-    const currentTags = form.getValues('tags')
+    const currentTags = form.getValues('tags') ?? []
     form.setValue('tags', currentTags.filter(tag => tag !== tagToRemove))
   }
   
@@ -264,23 +264,23 @@ export function ShareTemplateDialog({
                       type="button"
                       variant="outline"
                       onClick={addTag}
-                      disabled={!currentTag.trim() || field.value.length >= 10}
+                      disabled={!currentTag.trim() || (field.value ?? []).length >= 10}
                     >
                       {m['templateSharing.shareDialog.form.addTag']?.()}
                     </Button>
                   </div>
-                  
-                  {field.value.length > 0 && (
+
+                  {(field.value ?? []).length > 0 && (
                     <div className="flex flex-wrap gap-2">
-                      {field.value.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="secondary"
-                          className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
-                          onClick={() => removeTag(tag)}
-                        >
-                          {tag} ×
-                        </Badge>
+                      {(field.value ?? []).map((tag: string) => (
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
+                        onClick={() => removeTag(tag)}
+                      >
+                        {tag} ×
+                      </Badge>
                       ))}
                     </div>
                   )}
