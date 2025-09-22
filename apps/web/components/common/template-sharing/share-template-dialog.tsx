@@ -47,6 +47,7 @@ import { Textarea } from '@libra/ui/components/textarea'
 import { Badge } from '@libra/ui/components/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@libra/ui/components/select'
 import { useTRPC } from '@/trpc/client'
+import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Loader2, Share2, Crown, Globe, Lock } from 'lucide-react'
 import * as m from '@/paraglide/messages'
@@ -57,11 +58,13 @@ const shareTemplateSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(100, 'Title must be less than 100 characters'),
   description: z.string().max(500, 'Description must be less than 500 characters').optional(),
   category: z.string().min(1, 'Please select a category'),
+  // Keep defaults here but treat them as optional in form input typing to satisfy resolver generic
   tags: z.array(z.string()).max(10, 'Maximum 10 tags allowed').default([]),
   isPublic: z.boolean().default(true),
 })
 
-type ShareTemplateForm = z.infer<typeof shareTemplateSchema>
+// Use the schema INPUT type for the form (fields with defaults become optional in input)
+type ShareTemplateForm = z.input<typeof shareTemplateSchema>
 
 interface ShareTemplateDialogProps {
   projectId: string
@@ -94,32 +97,32 @@ export function ShareTemplateDialog({
     },
   })
   
-  const shareTemplateMutation = trpc.template?.share?.useMutation({
-    onSuccess: () => {
-      toast.success('Template shared successfully!', {
-        description: 'Your template is now available for the community to use.',
-      })
-      form.reset()
-      setIsOpen(false)
-      if (onOpenChange) onOpenChange(false)
-    },
-    onError: (error: any) => {
-      toast.error('Failed to share template', {
-        description: error.message || 'Please try again later.',
-      })
-    },
-  })
+  const shareTemplateMutation = useMutation(
+    trpc.template.share.mutationOptions({
+      onSuccess: () => {
+        toast.success('Template shared successfully!', {
+          description: 'Your template is now available for the community to use.',
+        })
+        form.reset()
+        setIsOpen(false)
+        if (onOpenChange) onOpenChange(false)
+      },
+      onError: (error: any) => {
+        toast.error('Failed to share template', {
+          description: error.message || 'Please try again later.',
+        })
+      },
+    })
+  )
   
   const handleSubmit = (data: ShareTemplateForm) => {
-    if (!shareTemplateMutation?.mutate) {
-      toast.error('Template system not available')
-      return
-    }
-    
-    shareTemplateMutation.mutate({
-      projectId,
+    // Normalize defaults in case resolver input omitted them
+    const normalized = {
       ...data,
-    })
+      tags: data.tags ?? [],
+      isPublic: data.isPublic ?? true,
+    }
+    shareTemplateMutation.mutate({ projectId, ...normalized })
   }
   
   const addTag = () => {
