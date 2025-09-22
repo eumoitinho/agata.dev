@@ -26,9 +26,10 @@ import { cache } from 'react'
 import { env } from './env.mjs'
 import { components } from './schema/components-schema'
 import * as projectSchema from './schema/project-schema'
+import * as templateSchema from './schema/template-schema'
 
 
-export const schema = { ...projectSchema, ...components }
+export const schema = { ...projectSchema, ...templateSchema, ...components }
 
 export const getDbAsync = async () => {
   let connectionString: string | undefined
@@ -142,6 +143,7 @@ export async function getDbForWorkflow(env: any) {
 
 // Re-export schema components for external use
 export * from './schema/project-schema'
+export * from './schema/template-schema'
 export * from './schema/components-schema'
 
 // Re-export custom domain query functions

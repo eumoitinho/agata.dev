@@ -28,6 +28,7 @@ import { projectRouter } from './router/project'
 import { sessionRouter } from './router/session'
 import { stripeRouter } from './router/stripe'
 import { subscriptionRouter } from './router/subscription'
+import { templateRouter } from './router/template'
 import { createTRPCRouter } from './trpc'
 
 export const appRouter = createTRPCRouter({
@@ -41,6 +42,7 @@ export const appRouter = createTRPCRouter({
   subscription: subscriptionRouter,
   session: sessionRouter,
   github: githubRouter,
+  template: templateRouter,
 })
 
 // export type definition of API

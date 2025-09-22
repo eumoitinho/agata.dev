@@ -21,11 +21,12 @@
 import { checkAndUpdateProjectUsage } from '@libra/auth/utils/subscription-limits'
 import { log } from '@libra/common'
 import { project } from '@libra/db/schema/project-schema'
+import { sharedTemplate, templateRemake } from '@libra/db/schema/template-schema'
 import { TRPCError } from '@trpc/server'
-import { eq } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 import { z } from 'zod/v4'
 import { projectSchema } from '../../schemas/project-schema'
-import { organizationProcedure } from '../../trpc'
+import { organizationProcedure, protectedProcedure } from '../../trpc'
 import {
   ensureOrgAccess,
   fetchProject,
@@ -169,6 +170,138 @@ export const specialOperations = {
         })
 
         return updatedProject
+      })
+    }),
+
+  createFromTemplate: organizationProcedure
+    .input(
+      z.object({
+        templateId: z.string(),
+        name: z.string().min(3).max(100),
+        description: z.string().max(500).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { templateId, name, description } = input
+      const { orgId, userId } = await requireOrgAndUser(ctx)
+      
+      log.project('info', 'Template remake started', {
+        orgId,
+        userId,
+        templateId,
+        operation: 'createFromTemplate',
+      })
+
+      // Check and deduct project quota
+      const quotaDeducted = await checkAndUpdateProjectUsage(orgId)
+      if (!quotaDeducted) {
+        log.project('warn', 'Template remake failed - quota exceeded', {
+          orgId,
+          userId,
+          templateId,
+          operation: 'createFromTemplate',
+        })
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Project quota exceeded' })
+      }
+
+      return await withDbCleanup(async (db) => {
+        // Fetch template details
+        const template = await db
+          .select()
+          .from(sharedTemplate)
+          .where(and(
+            eq(sharedTemplate.id, templateId),
+            eq(sharedTemplate.isPublic, true)
+          ))
+          .limit(1)
+
+        if (!template.length) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Template not found or not public',
+          })
+        }
+
+        const templateData = template[0]
+
+        // TODO: Check if user has access to premium templates
+        // For now, we'll allow access to all templates
+        const isPremiumTemplate = templateData.creatorPlanAtShare !== 'free'
+        // const userPlan = getUserPlan(userId) // This would need to be implemented
+        // if (isPremiumTemplate && userPlan === 'free') {
+        //   throw new TRPCError({
+        //     code: 'FORBIDDEN',
+        //     message: 'Premium subscription required to use this template',
+        //   })
+        // }
+
+        // Create project from template
+        const newProject = await createProjectWithHistory(db, {
+          orgId,
+          userId,
+          operation: 'createFromTemplate',
+        }, {
+          name,
+          templateType: templateData.templateType,
+          visibility: 'private', // Default to private for template remakes
+          initialMessage: description || `Project created from template: ${templateData.title}`,
+        })
+
+        // Override with template source code if available
+        if (templateData.sourceCode) {
+          try {
+            const templateMessageHistory = JSON.parse(templateData.sourceCode)
+            if (Array.isArray(templateMessageHistory)) {
+              await db
+                .update(project)
+                .set({ messageHistory: templateData.sourceCode })
+                .where(eq(project.id, newProject.id))
+            }
+          } catch (error) {
+            log.project('warn', 'Failed to parse template source code', {
+              templateId,
+              error: error instanceof Error ? error.message : String(error),
+            })
+          }
+        }
+
+        // Record the template remake
+        try {
+          await db.insert(templateRemake).values({
+            templateId,
+            userUserId: userId,
+            userOrganizationId: orgId,
+            // userPlan would need to be fetched from subscription
+            // userPlan: userPlan,
+            projectId: newProject.id,
+          })
+
+          // Increment template remake count
+          await db
+            .update(sharedTemplate)
+            .set({
+              statsRemakes: sql`${sharedTemplate.statsRemakes} + 1`,
+              updatedAt: new Date(),
+            })
+            .where(eq(sharedTemplate.id, templateId))
+        } catch (error) {
+          // Non-critical error - continue even if remake tracking fails
+          log.project('warn', 'Failed to track template remake', {
+            templateId,
+            projectId: newProject.id,
+            error: error instanceof Error ? error.message : String(error),
+          })
+        }
+
+        log.project('info', 'Template remake completed successfully', {
+          orgId,
+          userId,
+          templateId,
+          projectId: newProject.id,
+          operation: 'createFromTemplate',
+        })
+
+        return newProject
       })
     }),
 }
