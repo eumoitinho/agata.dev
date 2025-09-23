@@ -130,3 +130,7 @@ export default {
  * Export types for external use
  */
 export type { Bindings, QueueMessage, DeploymentParams, DeploymentResult } from './types'
+
+// Export the Hono app itself so we can reuse it in a Node/Azure runtime
+// without affecting the Cloudflare Worker default export shape.
+export { app }
