@@ -21,7 +21,7 @@
     "stripe:local": "stripe listen --forward-to localhost:3000/api/webhooks",
     "studio:dev": "turbo studio:dev",
     "preview": "cd apps/web && opennextjs-cloudflare build && opennextjs-cloudflare preview ",
-    "deploy": "cd apps/web &&  opennextjs-cloudflare build && opennextjs-cloudflare deploy -- --keep-vars",
+    "deploy": "cd apps/web && opennextjs-cloudflare build && opennextjs-cloudflare deploy -- --keep-vars && cd ../deploy-v3 && bun deploy",
     "deploy:cache": "cd apps/opennext-cache && wrangler deploy",
     "deploy:azure": "cd apps/deploy-azure/workers && bun run deploy",
     "deploy:v3": "cd apps/deploy-v3 && bun run deploy",

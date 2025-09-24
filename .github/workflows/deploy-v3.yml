@@ -1,0 +1,68 @@
+name: Deploy V3 (Azure)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'apps/deploy-v3/**'
+      - 'packages/auth/**'
+      - 'packages/common/**'
+      - 'packages/middleware/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: latest
+
+    - name: Install dependencies
+      run: bun install
+
+    - name: Build deploy-v3
+      run: |
+        cd apps/deploy-v3
+        bun build
+
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Azure Container Registry
+      run: az acr login --name agattaregistry
+
+    - name: Build and Push Docker Image
+      run: |
+        cd apps/deploy-v3
+        docker build -t agattaregistry.azurecr.io/agatta-deploy-v3:${{ github.sha }} .
+        docker build -t agattaregistry.azurecr.io/agatta-deploy-v3:latest .
+        docker push agattaregistry.azurecr.io/agatta-deploy-v3:${{ github.sha }}
+        docker push agattaregistry.azurecr.io/agatta-deploy-v3:latest
+
+    - name: Deploy to Azure Container Apps
+      run: |
+        az containerapp update \
+          --name agatta-deploy-v3 \
+          --resource-group agatta-deploy-v3-rg \
+          --image agattaregistry.azurecr.io/agatta-deploy-v3:latest
+
+    - name: Check Deployment Status
+      run: |
+        echo "✅ Deploy V3 deployed successfully!"
+        az containerapp show \
+          --name agatta-deploy-v3 \
+          --resource-group agatta-deploy-v3-rg \
+          --query "properties.configuration.ingress.fqdn" \
+          --output tsv

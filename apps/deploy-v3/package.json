@@ -4,7 +4,7 @@
   "description": "Azure-based deployment service for Agatta platform (Deploy V3)",
   "scripts": {
     "build": "bun build src/azure-entrypoint.ts --target node --outdir dist --minify --sourcemap",
-    "dev": "NODE_ENV=development PORT=3010 bun --watch src/azure-entrypoint.ts",
+    "dev": "NODE_ENV=development PORT=3010 dotenv -e ../../.env -- bun --watch src/azure-entrypoint.ts",
     "dev:api": "PORT=3010 NODE_ENV=development bun --watch src/azure-entrypoint.ts",
     "dev:consumer": "ENABLE_QUEUE_CONSUMER=true NODE_ENV=development bun --watch src/azure-entrypoint.ts",
     "start": "NODE_ENV=production bun dist/azure-entrypoint.js",
@@ -15,7 +15,10 @@
     "lint": "biome check .",
     "format": "biome format .",
     "clean": "rm -rf dist .next node_modules/.cache",
-    "deploy": "bun build && az containerapp update --name agatta-deploy-v3 --resource-group $(AZURE_RESOURCE_GROUP) --yaml azure-container-app.yaml",
+    "deploy": "bun run deploy:full",
+    "deploy:full": "bun build && bun docker:build:push && bun deploy:container",
+    "deploy:container": "source ../../.env && az containerapp update --name agatta-deploy-v3 --resource-group $AZURE_RESOURCE_GROUP --image $AZURE_CONTAINER_REGISTRY_SERVER/agatta-deploy-v3:latest",
+    "docker:build:push": "source ../../.env && az acr login --name agattaregistry && docker build -t $AZURE_CONTAINER_REGISTRY_SERVER/agatta-deploy-v3:latest . && docker push $AZURE_CONTAINER_REGISTRY_SERVER/agatta-deploy-v3:latest",
     "preview": "bun build && bun start",
     "docker:build": "docker build -t agatta/deploy-v3:latest .",
     "docker:run": "docker run -p 3010:3010 -p 8080:8080 --env-file .env agatta/deploy-v3:latest"
