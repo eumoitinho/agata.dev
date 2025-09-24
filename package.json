@@ -23,6 +23,8 @@
     "preview": "cd apps/web && opennextjs-cloudflare build && opennextjs-cloudflare preview ",
     "deploy": "cd apps/web &&  opennextjs-cloudflare build && opennextjs-cloudflare deploy -- --keep-vars",
     "deploy:cache": "cd apps/opennext-cache && wrangler deploy",
+    "deploy:azure": "cd apps/deploy-azure/workers && bun run deploy",
+    "deploy:v3": "cd apps/deploy-v3 && bun run deploy",
     "upload": "cd apps/web &&  opennextjs-cloudflare build && opennextjs-cloudflare upload ",
     "postinstall": "chmod +x node_modules/@biomejs/cli-darwin-arm64/biome 2>/dev/null || true",
     "fix-biome-permissions": "chmod +x node_modules/@biomejs/cli-darwin-arm64/biome",

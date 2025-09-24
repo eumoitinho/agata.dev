@@ -20,7 +20,30 @@
 
 export type { TemplateConfig } from './types'
 import { fileStructure } from './vite-shadcn-template'
+import { azureDeployV3FileStructure, azureDeployV3Template } from './azure-deploy-v3-template'
 
 export const templateConfigs = {
-  vite: fileStructure
+  vite: fileStructure,
+  'azure-deploy-v3': azureDeployV3FileStructure
 }
+
+export const templateSpecs = {
+  vite: {
+    id: 'vite',
+    name: 'Vite React Template',
+    runCommand: 'bun dev'
+  },
+  'azure-deploy-v3': azureDeployV3Template
+}
+
+// Export template registry and utilities
+export {
+  AVAILABLE_TEMPLATES,
+  TEMPLATE_CATEGORIES,
+  DEPLOYMENT_TYPES,
+  getTemplateById,
+  getTemplatesByDeploymentType,
+  getTemplatesByCategory,
+  isAzureTemplate,
+  getTemplateDeploymentConfig
+} from './available-templates'

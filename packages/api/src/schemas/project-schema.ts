@@ -47,7 +47,7 @@ export const projectSchema = z.object({
   name: z.string().optional(),
   initialMessage: z.string().optional(),
   visibility: z.enum(['public', 'private']).optional(),
-  templateType: z.string().optional(),
+  templateType: z.enum(['vite', 'azure-deploy-v3']).optional().default('vite'),
   attachment: z
     .object({
       key: z.string(),

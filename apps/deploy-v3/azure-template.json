@@ -1,0 +1,204 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "projectName": {
+      "type": "string",
+      "defaultValue": "agatta",
+      "metadata": {
+        "description": "Project name prefix for all resources"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    }
+  },
+  "variables": {
+    "serviceBusNamespace": "[concat(parameters('projectName'), '-servicebus')]",
+    "cosmosAccountName": "[concat(parameters('projectName'), '-cosmos')]",
+    "storageAccountName": "[concat(parameters('projectName'), 'storage')]",
+    "containerRegistryName": "[concat(parameters('projectName'), 'registry')]",
+    "appInsightsName": "[concat(parameters('projectName'), '-insights')]",
+    "containerAppEnvName": "[concat(parameters('projectName'), '-env')]",
+    "containerAppName": "[concat(parameters('projectName'), '-deploy-v3')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ServiceBus/namespaces",
+      "apiVersion": "2022-01-01-preview",
+      "name": "[variables('serviceBusNamespace')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Basic",
+        "tier": "Basic"
+      },
+      "resources": [
+        {
+          "type": "queues",
+          "apiVersion": "2022-01-01-preview",
+          "name": "deployment-queue",
+          "dependsOn": [
+            "[resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusNamespace'))]"
+          ],
+          "properties": {
+            "maxDeliveryCount": 3,
+            "lockDuration": "PT5M"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2023-04-15",
+      "name": "[variables('cosmosAccountName')]",
+      "location": "[parameters('location')]",
+      "kind": "GlobalDocumentDB",
+      "properties": {
+        "databaseAccountOfferType": "Standard",
+        "consistencyPolicy": {
+          "defaultConsistencyLevel": "Session"
+        },
+        "locations": [
+          {
+            "locationName": "[parameters('location')]",
+            "failoverPriority": 0
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-01-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "accessTier": "Hot"
+      }
+    },
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2023-01-01-preview",
+      "name": "[variables('containerRegistryName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Basic"
+      },
+      "properties": {
+        "adminUserEnabled": true
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[variables('appInsightsName')]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web"
+      }
+    },
+    {
+      "type": "Microsoft.App/managedEnvironments",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('containerAppEnvName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "appLogsConfiguration": {
+          "destination": "azure-monitor"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.App/containerApps",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('containerAppName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.App/managedEnvironments', variables('containerAppEnvName'))]",
+        "[resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusNamespace'))]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosAccountName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ],
+      "properties": {
+        "managedEnvironmentId": "[resourceId('Microsoft.App/managedEnvironments', variables('containerAppEnvName'))]",
+        "configuration": {
+          "ingress": {
+            "external": true,
+            "targetPort": 3010,
+            "transport": "auto"
+          },
+          "secrets": [
+            {
+              "name": "service-bus-connection",
+              "value": "[listKeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', variables('serviceBusNamespace'), 'RootManageSharedAccessKey'), '2022-01-01-preview').primaryConnectionString]"
+            },
+            {
+              "name": "cosmos-connection",
+              "value": "[listConnectionStrings(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosAccountName')), '2023-04-15').connectionStrings[0].connectionString]"
+            },
+            {
+              "name": "storage-connection",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2023-01-01').keys[0].value, ';EndpointSuffix=core.windows.net')]"
+            }
+          ]
+        },
+        "template": {
+          "containers": [
+            {
+              "name": "deploy-v3-api",
+              "image": "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest",
+              "resources": {
+                "cpu": 0.5,
+                "memory": "1Gi"
+              },
+              "env": [
+                {
+                  "name": "AZURE_SERVICE_BUS_CONNECTION_STRING",
+                  "secretRef": "service-bus-connection"
+                },
+                {
+                  "name": "AZURE_COSMOS_DB_CONNECTION_STRING",
+                  "secretRef": "cosmos-connection"
+                },
+                {
+                  "name": "AZURE_STORAGE_CONNECTION_STRING",
+                  "secretRef": "storage-connection"
+                }
+              ]
+            }
+          ],
+          "scale": {
+            "minReplicas": 1,
+            "maxReplicas": 10
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "serviceBusConnection": {
+      "type": "string",
+      "value": "[listKeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', variables('serviceBusNamespace'), 'RootManageSharedAccessKey'), '2022-01-01-preview').primaryConnectionString]"
+    },
+    "cosmosConnection": {
+      "type": "string",
+      "value": "[listConnectionStrings(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosAccountName')), '2023-04-15').connectionStrings[0].connectionString]"
+    },
+    "storageConnection": {
+      "type": "string",
+      "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2023-01-01').keys[0].value, ';EndpointSuffix=core.windows.net')]"
+    },
+    "containerAppUrl": {
+      "type": "string",
+      "value": "[concat('https://', reference(resourceId('Microsoft.App/containerApps', variables('containerAppName'))).configuration.ingress.fqdn)]"
+    }
+  }
+}

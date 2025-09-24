@@ -1,0 +1,224 @@
+# Azure Container Apps deployment configuration
+# Deploy with: az containerapp create --yaml azure-container-app.yaml
+
+properties:
+  managedEnvironmentId: /subscriptions/$(AZURE_SUBSCRIPTION_ID)/resourceGroups/$(AZURE_RESOURCE_GROUP)/providers/Microsoft.App/managedEnvironments/$(AZURE_CONTAINER_ENV_NAME)
+  configuration:
+    activeRevisionsMode: Multiple
+    maxInactiveRevisions: 5
+    ingress:
+      external: true
+      targetPort: 3010
+      allowInsecure: false
+      traffic:
+      - weight: 100
+        latestRevision: true
+    secrets:
+    - name: azure-service-bus-connection
+      value: $(AZURE_SERVICE_BUS_CONNECTION_STRING)
+    - name: azure-cosmos-db-connection
+      value: $(AZURE_COSMOS_DB_CONNECTION_STRING)
+    - name: azure-storage-connection
+      value: $(AZURE_STORAGE_CONNECTION_STRING)
+    # database-url is optional - uncomment if using PostgreSQL
+    # - name: database-url
+    #   value: $(DATABASE_URL)
+    - name: cloudflare-api-token
+      value: $(CLOUDFLARE_API_TOKEN)
+    registries:
+    - server: $(AZURE_CONTAINER_REGISTRY_SERVER)
+      username: $(AZURE_CONTAINER_REGISTRY_USERNAME)
+      passwordSecretRef: azure-container-registry-password
+  template:
+    revisionSuffix: deploy-v3
+    containers:
+    - name: agatta-deploy-v3-api
+      image: $(AZURE_CONTAINER_REGISTRY_SERVER)/agatta/deploy-v3:latest
+      env:
+      - name: PORT
+        value: "3010"
+      - name: NODE_ENV
+        value: "production"
+      - name: LOG_LEVEL
+        value: "info"
+      - name: DEPLOYMENT_ENVIRONMENT
+        value: "production"
+
+      # Azure Configuration
+      - name: AZURE_SUBSCRIPTION_ID
+        value: $(AZURE_SUBSCRIPTION_ID)
+      - name: AZURE_RESOURCE_GROUP
+        value: $(AZURE_RESOURCE_GROUP)
+      - name: AZURE_REGION
+        value: $(AZURE_REGION)
+      - name: AZURE_TENANT_ID
+        value: $(AZURE_TENANT_ID)
+
+      # Service Bus Configuration
+      - name: AZURE_SERVICE_BUS_CONNECTION_STRING
+        secretRef: azure-service-bus-connection
+      - name: DEPLOYMENT_QUEUE_NAME
+        value: "deployment-queue"
+
+      # Cosmos DB Configuration
+      - name: AZURE_COSMOS_DB_CONNECTION_STRING
+        secretRef: azure-cosmos-db-connection
+      - name: COSMOS_DATABASE_NAME
+        value: "agatta-deploy-v3"
+      - name: COSMOS_CONTAINER_NAME
+        value: "deployments"
+
+      # Blob Storage Configuration
+      - name: AZURE_STORAGE_CONNECTION_STRING
+        secretRef: azure-storage-connection
+
+      # Database Configuration (Optional - PostgreSQL)
+      # - name: DATABASE_URL
+      #   secretRef: database-url
+      # - name: DIRECT_URL
+      #   secretRef: database-url
+
+      # Cloudflare Configuration
+      - name: CLOUDFLARE_API_TOKEN
+        secretRef: cloudflare-api-token
+      - name: CLOUDFLARE_ACCOUNT_ID
+        value: $(CLOUDFLARE_ACCOUNT_ID)
+
+      # Health Check
+      - name: CONTAINER_HEALTH_CHECK
+        value: "true"
+
+      resources:
+        cpu: "1.0"
+        memory: "2Gi"
+
+      probes:
+      - type: Liveness
+        httpGet:
+          path: "/health"
+          port: 3010
+          scheme: HTTP
+        initialDelaySeconds: 10
+        periodSeconds: 30
+        timeoutSeconds: 5
+        failureThreshold: 3
+      - type: Readiness
+        httpGet:
+          path: "/health"
+          port: 3010
+          scheme: HTTP
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        timeoutSeconds: 3
+        failureThreshold: 2
+      - type: Startup
+        httpGet:
+          path: "/health"
+          port: 8080
+          scheme: HTTP
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        timeoutSeconds: 3
+        failureThreshold: 10
+
+    # Queue Consumer Container (separate scaling group)
+    - name: agatta-deploy-v3-consumer
+      image: $(AZURE_CONTAINER_REGISTRY_SERVER)/agatta/deploy-v3:latest
+      env:
+      - name: CONTAINER_APP_REVISION_MODE
+        value: "consumer"
+      - name: ENABLE_QUEUE_CONSUMER
+        value: "true"
+      - name: QUEUE_CONSUMER_CONCURRENCY
+        value: "5"
+      - name: LOG_LEVEL
+        value: "info"
+      - name: DEPLOYMENT_ENVIRONMENT
+        value: "production"
+
+      # Azure Configuration (same as API container)
+      - name: AZURE_SUBSCRIPTION_ID
+        value: $(AZURE_SUBSCRIPTION_ID)
+      - name: AZURE_RESOURCE_GROUP
+        value: $(AZURE_RESOURCE_GROUP)
+      - name: AZURE_REGION
+        value: $(AZURE_REGION)
+      - name: AZURE_TENANT_ID
+        value: $(AZURE_TENANT_ID)
+
+      # Service Bus Configuration
+      - name: AZURE_SERVICE_BUS_CONNECTION_STRING
+        secretRef: azure-service-bus-connection
+      - name: DEPLOYMENT_QUEUE_NAME
+        value: "deployment-queue"
+
+      # Cosmos DB Configuration
+      - name: AZURE_COSMOS_DB_CONNECTION_STRING
+        secretRef: azure-cosmos-db-connection
+      - name: COSMOS_DATABASE_NAME
+        value: "agatta-deploy-v3"
+      - name: COSMOS_CONTAINER_NAME
+        value: "deployments"
+
+      # Blob Storage Configuration
+      - name: AZURE_STORAGE_CONNECTION_STRING
+        secretRef: azure-storage-connection
+
+      # Database Configuration (Optional - PostgreSQL)
+      # - name: DATABASE_URL
+      #   secretRef: database-url
+      # - name: DIRECT_URL
+      #   secretRef: database-url
+
+      # Cloudflare Configuration
+      - name: CLOUDFLARE_API_TOKEN
+        secretRef: cloudflare-api-token
+      - name: CLOUDFLARE_ACCOUNT_ID
+        value: $(CLOUDFLARE_ACCOUNT_ID)
+
+      # Health Check
+      - name: CONTAINER_HEALTH_CHECK
+        value: "true"
+
+      resources:
+        cpu: "2.0"
+        memory: "4Gi"
+
+      probes:
+      - type: Liveness
+        httpGet:
+          path: "/health"
+          port: 8080
+          scheme: HTTP
+        initialDelaySeconds: 10
+        periodSeconds: 30
+        timeoutSeconds: 5
+        failureThreshold: 3
+      - type: Startup
+        httpGet:
+          path: "/health"
+          port: 8080
+          scheme: HTTP
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        timeoutSeconds: 3
+        failureThreshold: 10
+
+    scale:
+      minReplicas: 1
+      maxReplicas: 10
+      rules:
+      - name: http-scaling
+        http:
+          metadata:
+            concurrentRequests: "10"
+      - name: service-bus-scaling
+        azureServiceBus:
+          queueName: deployment-queue
+          messageCount: "5"
+          connectionFromEnv: AZURE_SERVICE_BUS_CONNECTION_STRING
+
+location: $(AZURE_REGION)
+type: Microsoft.App/containerApps
+identity:
+  type: SystemAssigned
