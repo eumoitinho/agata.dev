@@ -15,10 +15,8 @@
     "lint": "biome check .",
     "format": "biome format .",
     "clean": "rm -rf dist .next node_modules/.cache",
-    "deploy": "bun run deploy:full",
-    "deploy:full": "bun build && bun docker:build:push && bun deploy:container",
-    "deploy:container": "source ../../.env && az containerapp update --name agatta-deploy-v3 --resource-group $AZURE_RESOURCE_GROUP --image $AZURE_CONTAINER_REGISTRY_SERVER/agatta-deploy-v3:latest",
-    "docker:build:push": "source ../../.env && az acr login --name agattaregistry && docker build -t $AZURE_CONTAINER_REGISTRY_SERVER/agatta-deploy-v3:latest . && docker push $AZURE_CONTAINER_REGISTRY_SERVER/agatta-deploy-v3:latest",
+    "deploy": "echo '🚀 Deploy via GitHub Actions - commit and push your changes!' && git status",
+    "deploy:local": "echo '❌ Local deploy disabled - Azure for Students account restriction'",
     "preview": "bun build && bun start",
     "docker:build": "docker build -t agatta/deploy-v3:latest .",
     "docker:run": "docker run -p 3010:3010 -p 8080:8080 --env-file .env agatta/deploy-v3:latest"
