@@ -1,0 +1,50 @@
+# Azure Configuration
+subscription_id = "your-azure-subscription-id"
+tenant_id      = "your-azure-tenant-id"
+
+# Resource Configuration
+resource_group_name = "libra-deploy-v3-rg"
+location           = "East US"
+project_name       = "libra-deploy-v3"
+environment        = "production"
+
+# Container Registry
+container_registry_name = "librav3registry"
+container_registry_sku  = "Basic"
+
+# Storage Account
+storage_account_name      = "librav3storage"
+storage_account_tier      = "Standard"
+storage_replication_type  = "LRS"
+
+# Service Bus
+servicebus_namespace_name = "libra-v3-servicebus"
+servicebus_sku           = "Standard"
+
+# Cosmos DB
+cosmos_account_name      = "libra-v3-cosmos"
+cosmos_consistency_level = "BoundedStaleness"
+cosmos_throughput       = 400
+
+# Key Vault
+key_vault_name = "libra-v3-keyvault"
+key_vault_sku  = "standard"
+
+# Container Apps
+container_app_environment_name = "libra-v3-containerapp-env"
+
+# Monitoring
+log_analytics_workspace_name = "libra-v3-logs"
+log_analytics_retention_days = 30
+application_insights_name    = "libra-v3-insights"
+
+# Identity
+managed_identity_name = "libra-v3-identity"
+
+# Tags
+tags = {
+  Project     = "libra-deploy-v3"
+  Environment = "production"
+  ManagedBy   = "Terraform"
+  CreatedBy   = "Claude"
+}

@@ -16,7 +16,9 @@
   },
   "routes": [
     {
-      "pattern": "deploy.libra.dev",
+      // Set via env when generating this file with scripts/config-processor.ts
+      // Example: export DEPLOY_DOMAIN=deploy.agatta.dev
+      "pattern": "{{DEPLOY_DOMAIN}}",
       "custom_domain": true
     }
   ],
