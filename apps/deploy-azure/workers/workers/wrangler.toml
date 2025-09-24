@@ -1,0 +1,41 @@
+# Cloudflare Workers configuration for Agatta Deploy V3 Hybrid
+name = "agatta-deploy-v3-hybrid"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Deploy to Brazil for lowest latency
+[placement]
+mode = "smart"
+
+# Environment variables (will be set via CLI)
+[vars]
+ENVIRONMENT = "production"
+AZURE_LOCATION = "brazilsouth"
+
+# Secrets (set via wrangler secret put)
+# AZURE_SUBSCRIPTION_ID
+# AZURE_SERVICE_BUS_CONNECTION_STRING
+# AZURE_COSMOS_CONNECTION_STRING
+# AZURE_STORAGE_CONNECTION_STRING
+# AZURE_KEY_VAULT_URI
+
+# Cron triggers for queue processing
+[[triggers.crons]]
+cron = "* * * * *"  # Every minute
+# Calls the /cron/queue-consumer endpoint
+
+# Durable Objects for session management (optional)
+# [[durable_objects.bindings]]
+# name = "DEPLOYMENT_SESSIONS"
+# class_name = "DeploymentSession"
+
+# KV for caching (optional)
+# [[kv_namespaces]]
+# binding = "DEPLOY_CACHE"
+# id = "your-kv-namespace-id"
+
+# Routes for custom domain
+# [[routes]]
+# pattern = "api.agatta.dev/*"
+# custom_domain = true
