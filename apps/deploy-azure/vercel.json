@@ -1,0 +1,51 @@
+{
+  "version": 2,
+  "name": "agatta-deploy-v3",
+  "regions": ["gru1"],
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "@vercel/node@3.0.23",
+      "maxDuration": 30
+    },
+    "api/cron/*.ts": {
+      "runtime": "@vercel/node@3.0.23",
+      "maxDuration": 10
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/queue-consumer",
+      "schedule": "* * * * *"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "AZURE_SUBSCRIPTION_ID": "@azure_subscription_id",
+    "AZURE_TENANT_ID": "@azure_tenant_id",
+    "AZURE_RESOURCE_GROUP": "@azure_resource_group",
+    "AZURE_LOCATION": "@azure_location",
+    "AZURE_CONTAINER_REGISTRY": "@azure_container_registry",
+    "AZURE_SERVICE_BUS_CONNECTION_STRING": "@azure_service_bus_connection_string",
+    "AZURE_SERVICE_BUS_QUEUE_NAME": "@azure_service_bus_queue_name",
+    "AZURE_STORAGE_CONNECTION_STRING": "@azure_storage_connection_string",
+    "AZURE_STORAGE_CONTAINER_NAME": "@azure_storage_container_name",
+    "AZURE_COSMOS_CONNECTION_STRING": "@azure_cosmos_connection_string",
+    "AZURE_COSMOS_DATABASE_NAME": "@azure_cosmos_database_name",
+    "AZURE_COSMOS_CONTAINER_NAME": "@azure_cosmos_container_name",
+    "AZURE_KEY_VAULT_URI": "@azure_key_vault_uri",
+    "MAX_CONCURRENT_DEPLOYMENTS": "10",
+    "DEPLOYMENT_TIMEOUT_MS": "600000",
+    "ENABLE_QUEUE_CONSUMER": "true",
+    "ENABLE_AUTO_SCALING": "true"
+  },
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/health"
+    }
+  ]
+}

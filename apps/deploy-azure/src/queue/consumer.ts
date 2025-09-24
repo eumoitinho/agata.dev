@@ -202,6 +202,35 @@ export class QueueConsumer {
   }
 
   /**
+   * Process a single message (for Vercel cron jobs)
+   * Returns true if a message was processed, false if no messages available
+   */
+  async processSingleMessage(): Promise<boolean> {
+    try {
+      // Receive a single message
+      const messages = await this.receiver.receiveMessages(1, {
+        maxWaitTimeInMs: 1000 // Short wait time for cron
+      })
+
+      if (messages.length === 0) {
+        return false // No messages available
+      }
+
+      const message = messages[0]
+      if (message) {
+        await this.processMessage(message)
+      }
+      return true // Message processed
+
+    } catch (error) {
+      this.logger.error('Error in processSingleMessage', {
+        error: error instanceof Error ? error.message : String(error)
+      })
+      throw error
+    }
+  }
+
+  /**
    * Sleep helper
    */
   private sleep(ms: number): Promise<void> {
