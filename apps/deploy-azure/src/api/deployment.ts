@@ -44,9 +44,19 @@ export function deploymentRoutes(
    */
   app.post(
     '/',
-    zValidator('json', deploymentParamsSchema),
     async (c) => {
-      const params = c.req.valid('json') as DeploymentParams
+      const body = await c.req.json()
+      const validationResult = deploymentParamsSchema.safeParse(body)
+
+      if (!validationResult.success) {
+        return c.json({
+          success: false,
+          error: 'Validation error',
+          details: validationResult.error.errors
+        }, 400)
+      }
+
+      const params = validationResult.data as DeploymentParams
 
       try {
         logger.info('New deployment request', {
