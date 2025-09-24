@@ -1,0 +1,196 @@
+# Azure DevOps Pipeline - Deploy V3 Only
+# Specific pipeline for deploy-v3 service
+
+name: Deploy-V3-$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  branches:
+    include:
+    - main
+    - develop
+  paths:
+    include:
+    - apps/deploy-v3/*
+
+pr:
+  branches:
+    include:
+    - main
+  paths:
+    include:
+    - apps/deploy-v3/*
+
+variables:
+  # Azure Resources
+  azureSubscription: 'Azure for Students'
+  containerRegistry: 'agattaregistry.azurecr.io'
+  resourceGroup: 'agatta-deploy-v3-rg'
+  containerAppName: 'agatta-deploy-v3'
+
+  # Build Configuration
+  imageName: 'agatta-deploy-v3'
+  dockerfilePath: 'Dockerfile'
+
+  # Environment Variables
+  AZURE_SERVICE_BUS_CONNECTION_STRING: $(AZURE_SERVICE_BUS_CONNECTION_STRING)
+  AZURE_COSMOS_DB_CONNECTION_STRING: $(AZURE_COSMOS_DB_CONNECTION_STRING)
+  AZURE_STORAGE_CONNECTION_STRING: $(AZURE_STORAGE_CONNECTION_STRING)
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: BuildAndTest
+  displayName: 'Build and Test'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build Deploy V3'
+
+    steps:
+    - checkout: self
+      displayName: 'Checkout Repository'
+
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '22.x'
+      displayName: 'Setup Node.js'
+
+    - script: |
+        # Install Bun
+        curl -fsSL https://bun.sh/install | bash
+        export PATH="$HOME/.bun/bin:$PATH"
+        echo "Bun version: $(bun --version)"
+      displayName: 'Install Bun Runtime'
+
+    - script: |
+        export PATH="$HOME/.bun/bin:$PATH"
+        cd apps/deploy-v3
+
+        echo "📦 Installing dependencies..."
+        bun install
+
+        echo "🔧 Building application..."
+        bun run build
+
+        echo "✅ Build completed successfully!"
+        ls -la dist/
+      displayName: 'Build Application'
+      workingDirectory: $(System.DefaultWorkingDirectory)
+
+    - script: |
+        export PATH="$HOME/.bun/bin:$PATH"
+        cd apps/deploy-v3
+
+        echo "🧪 Running tests..."
+        bun run test
+      displayName: 'Run Tests'
+      workingDirectory: $(System.DefaultWorkingDirectory)
+      continueOnError: true
+
+- stage: DockerBuild
+  displayName: 'Docker Build & Push'
+  dependsOn: BuildAndTest
+  condition: succeeded()
+
+  jobs:
+  - job: DockerJob
+    displayName: 'Docker Operations'
+
+    steps:
+    - checkout: self
+      displayName: 'Checkout Repository'
+
+    - task: Docker@2
+      displayName: 'Login to Azure Container Registry'
+      inputs:
+        containerRegistry: $(containerRegistry)
+        command: 'login'
+
+    - task: Docker@2
+      displayName: 'Build Docker Image'
+      inputs:
+        containerRegistry: $(containerRegistry)
+        repository: $(imageName)
+        command: 'build'
+        Dockerfile: 'apps/deploy-v3/$(dockerfilePath)'
+        buildContext: 'apps/deploy-v3'
+        tags: |
+          $(Build.BuildNumber)
+          latest
+
+    - task: Docker@2
+      displayName: 'Push Docker Image'
+      inputs:
+        containerRegistry: $(containerRegistry)
+        repository: $(imageName)
+        command: 'push'
+        tags: |
+          $(Build.BuildNumber)
+          latest
+
+- stage: Deploy
+  displayName: 'Deploy to Azure'
+  dependsOn: DockerBuild
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+
+  jobs:
+  - deployment: DeployToProduction
+    displayName: 'Deploy to Production'
+    environment: 'production-deploy-v3'
+
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureCLI@2
+            displayName: 'Deploy to Container Apps'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "🚀 Starting deployment to Azure Container Apps..."
+
+                # Update Container App
+                az containerapp update \
+                  --name $(containerAppName) \
+                  --resource-group $(resourceGroup) \
+                  --image $(containerRegistry)/$(imageName):$(Build.BuildNumber) \
+                  --output table
+
+                echo "✅ Container App updated successfully!"
+
+          - task: AzureCLI@2
+            displayName: 'Get Application URL'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                APP_URL=$(az containerapp show \
+                  --name $(containerAppName) \
+                  --resource-group $(resourceGroup) \
+                  --query "properties.configuration.ingress.fqdn" \
+                  --output tsv)
+
+                if [ ! -z "$APP_URL" ]; then
+                  echo "🌐 Application deployed successfully!"
+                  echo "📍 URL: https://$APP_URL"
+                  echo "##vso[task.setvariable variable=AppUrl;isOutput=true]https://$APP_URL"
+                else
+                  echo "❌ Failed to get application URL"
+                  exit 1
+                fi
+
+          - script: |
+              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+              echo "🎉 DEPLOY V3 DEPLOYMENT COMPLETED SUCCESSFULLY!"
+              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+              echo "📋 Deployment Details:"
+              echo "   • Build Number: $(Build.BuildNumber)"
+              echo "   • Image: $(containerRegistry)/$(imageName):$(Build.BuildNumber)"
+              echo "   • Resource Group: $(resourceGroup)"
+              echo "   • Container App: $(containerAppName)"
+              echo "   • Application URL: $(AppUrl)"
+              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            displayName: '🚀 Deployment Summary'

@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:azure": "bun run test-azure-integration.ts",
     "lint": "biome check .",
     "format": "biome format .",
     "clean": "rm -rf dist .next node_modules/.cache",
