@@ -573,4 +573,4 @@ ACR_LOGIN_SERVER="yourregistry.azurecr.io"
 ACR_USERNAME="yourregistry"
 ACR_PASSWORD="your-acr-password"`
   }
-}`
+}
