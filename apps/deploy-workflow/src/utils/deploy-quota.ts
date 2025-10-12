@@ -18,10 +18,10 @@
  *
  */
 
-import { getDbForHono, getDbForWorkflow } from '@libra/db'
-import { subscriptionLimit } from '@libra/db/schema/project-schema'
+import { getDbForHono, getDbForWorkflow } from '@agatta/db'
+import { subscriptionLimit } from '@agatta/db/schema/project-schema'
 import { and, eq, sql } from 'drizzle-orm'
-import { log, tryCatch } from '@libra/common'
+import { log, tryCatch } from '@agatta/common'
 import type { AppContext, Bindings } from '../types'
 
 // Plan types for quota management

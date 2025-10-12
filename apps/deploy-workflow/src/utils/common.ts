@@ -23,7 +23,7 @@ import {
   getRequestId as getRequestIdCommon,
   validateIdentifier,
   sanitizeIdentifier
-} from '@libra/common'
+} from '@agatta/common'
 import type { AppContext } from '../types'
 
 // Re-export common utility functions for convenience
@@ -40,7 +40,7 @@ export {
   isDevelopment,
   isProduction,
   getEnvironment
-} from '@libra/common'
+} from '@agatta/common'
 
 /**
  * Generate a unique request ID if not provided

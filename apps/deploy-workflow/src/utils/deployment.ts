@@ -17,7 +17,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  */
-import { log, tryCatch } from '@libra/common'
+import { log, tryCatch } from '@agatta/common'
 
 // Import unified sandbox configuration
 import {
@@ -28,7 +28,7 @@ import {
     getBuilderDefaultProvider,
     type ISandbox,
     type SandboxProviderType
-} from '@libra/sandbox'
+} from '@agatta/sandbox'
 
 // Re-export for backward compatibility
 export { DEPLOYMENT_CONFIG }

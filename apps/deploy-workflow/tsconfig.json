@@ -1,5 +1,5 @@
 {
-  "extends": "@libra/typescript-config/base.json",
+  "extends": "@agatta/typescript-config/worker.json",
   "include": [
     "src/**/*",
     "worker-configuration.d.ts"

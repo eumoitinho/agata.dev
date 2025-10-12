@@ -1,0 +1,12 @@
+# Cloudflare configuration
+CLOUDFLARE_ACCOUNT_ID="your-cloudflare-account-id"
+CLOUDFLARE_API_TOKEN="your-cloudflare-api-token"
+
+# Application configuration
+NEXT_PUBLIC_DISPATCHER_URL="https://agatta.sh"
+ENVIRONMENT="development"
+
+# Optional: Sandbox configuration
+E2B_API_KEY="your-e2b-api-key"
+DAYTONA_SERVER_URL="your-daytona-server-url"
+DAYTONA_API_KEY="your-daytona-api-key"

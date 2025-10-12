@@ -92,37 +92,37 @@ function FetchMonitor() {
     const activeRequests = new Set<string>();
     
     // Override global fetch
-    (window.fetch as any) = function(...args: Parameters<typeof fetch>) {
+    window.fetch = (...args: Parameters<typeof fetch>) => {
       const url = args[0] instanceof Request ? args[0].url : String(args[0]);
       const requestId = `${url}_${Date.now()}`;
-      
+
       // Start loading
       if (activeRequests.size === 0) {
         globalLoader.start();
       }
-      
+
       activeRequests.add(requestId);
-      
+
       // Call original fetch
-      return originalFetch.apply(this, args)
+      return originalFetch(...args)
         .then(response => {
           activeRequests.delete(requestId);
-          
+
           // If no active requests, complete loading
           if (activeRequests.size === 0) {
             globalLoader.done();
           }
-          
+
           return response;
         })
         .catch(error => {
           activeRequests.delete(requestId);
-          
+
           // If no active requests, complete loading
           if (activeRequests.size === 0) {
             globalLoader.done();
           }
-          
+
           throw error;
         });
     };
